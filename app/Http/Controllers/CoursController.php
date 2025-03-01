@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Course;
+use App\Models\EducationProgram;
+use Illuminate\Http\Request;
+
+class CoursController extends Controller
+{
+
+    public function index() {
+        $courses = Course::paginate(10);
+        return view('admin.courses', compact('courses'));
+    }
+
+    public function show(Course $course) {
+        return view('admin.show.course', compact('course'));
+    }
+
+    public function create() {
+        $educationPrograms = EducationProgram::all();
+        return view('admin.add.add-course', compact('educationPrograms'));
+    }
+
+    public function store(Request $request) {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'credits' => 'required|integer|min:0',
+            'semester' => 'required|integer|min:1|max:10',
+            'type' => 'required|in:Обязательный,Элективный',
+            'degree' => 'required|in:Бакалавриат,Магистратура,Аспирантура',
+            'education_program_id' => 'required|exists:education_programs,id',
+            'code' => 'string|unique:courses,code|max:50',
+        ], [
+            'name.required' => 'Поле "Название" обязательно',
+            'credits.required' => 'Поле "Кредиты" обязательно',
+            'semester.required' => 'Поле "Семестр" обязательно',
+            'degree.required' => 'Поле "Степень" обязательно"',
+            'education_program_id.required' => 'Поле "Образовательная программа" обязательно',
+            'education_program_id.exists' => 'Выбранная образовательная программа не существует',
+            'type.required' => 'Поле "Тип" обязательно',
+            'code.unique' => 'Этот код уже занят, выберите другой',
+        ]);
+
+        $course = Course::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'credits' => $validated['credits'],
+            'semester' => $validated['semester'],
+            'type' => $validated['type'],
+            'code' => $validated['code'],
+        ]);
+
+        $validEducationPrograms = array_map('intval', (array) $validated['education_program_id']);
+        $course->educationPrograms()->sync($validEducationPrograms);
+
+        return redirect()->route('admin.createCourse')->with('success', 'Курс успешно создан!');
+    }
+
+    public function searchCode(Request $request) {
+        $code = $request->query('code');
+    
+        if (!$code) {
+            return response()->json(['error' => 'Код не передан'], 400);
+        }
+    
+        $courses = Course::where('code', 'like', "%$code%")->get();
+    
+        return response()->json($courses);
+    }
+
+    public function search(Request $request) {
+    $query = $request->get('search');  
+    $degree = $request->get('degree'); 
+    $semester = $request->get('semester'); 
+
+    $courses = Course::query();
+
+    if ($query) {
+        $courses->where(function ($q) use ($query) {
+            $q->where('name', 'LIKE', "%$query%")
+            ->orWhere('semester', 'LIKE', "%$query%")
+            ->orWhere('degree', 'LIKE', "%$query%")
+            ->orWhere('credits', 'LIKE', "%$query%") // Поиск по количеству кредитов
+            ->orWhereHas('educationPrograms', function ($q) use ($query) {
+                $q->where('title', 'LIKE', "%$query%");
+            })
+            ->orWhereHas('teachers', function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%$query%")
+                    ->orWhere('surname', 'LIKE', "%$query%")
+                    ->orWhere('lastname', 'LIKE', "%$query%");
+            });
+        });
+        }
+
+        if ($degree) {
+            $courses->where('degree', $degree);
+        }
+
+        if ($semester) {
+            $courses->where('semester', $semester);
+        }
+
+        $courses = $courses->paginate(10)->appends(request()->query());
+
+        return view('admin.courses', compact('courses'));
+    }
+
+    public function edit(Course $course) {
+        $editing = true;
+        return view('admin.show.course', compact('course', 'editing'));
+    }
+}
