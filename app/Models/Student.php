@@ -16,9 +16,7 @@ class Student extends Authenticatable
         'email', 'password',
     ];
 
-    protected $hidden = [
-        'password',
-    ];
+    protected $hidden = ['plain_password'];
 
     public function groups()
     {

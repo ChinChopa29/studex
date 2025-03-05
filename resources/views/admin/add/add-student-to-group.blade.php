@@ -4,21 +4,23 @@
 @endsection
 
 @section('content')
-<div class="text-white bg-slate-800 m-4 px-4 py-4 rounded-lg">
-   <div class="flex items-center gap-4 mb-8">
-      <a href="{{ route('admin.showGroups') }}">
-         <i class="fa fa-arrow-left text-2xl hover:text-gray-400 hover:border-gray-400 transition-all duration-200 border-2 rounded-full p-1"></i>
+<div class="bg-slate-800 text-white m-4 p-6 rounded-2xl shadow-lg">
+   <div class="flex items-center gap-4 mb-6">
+      <a href="{{ route('admin.showGroup', ['group' => $group->id]) }}" class="p-2 border-2 border-transparent rounded-full hover:border-gray-400 transition">
+         <i class="fa fa-arrow-left text-2xl hover:text-gray-400"></i>
       </a>
-      <h1 class="text-2xl"><i class="fas fa-list text-2xl"></i> Группа {{ $group->name }}</h1>
+      <h1 class="text-2xl font-semibold flex items-center gap-2">
+         <i class="fas fa-list text-2xl"></i> Группа {{ $group->name }}
+      </h1>
    </div>
 
    @if($group->students->isNotEmpty())
       <div class="my-4">
-         <h1 class="mb-2 text-2xl">Список студентов группы:</h1>
-         <ul>
+         <h1 class="text-2xl font-semibold mb-4">Список студентов:</h1>
+         <ul class="space-y-2">
             @foreach($group->students as $student)
                <li class="hover:underline flex items-center gap-4">
-                  <a href="{{ route('admin.showUser', ['student' => $student->id]) }}">
+                  <a href="{{ route('admin.showUser', ['student' => $student->id]) }}" class="text-gray-300 hover:text-gray-400">
                      {{ $student->name }} {{ $student->surname }} {{ $student->lastname }}
                   </a>
                   <form action="{{ route('admin.detachUser', ['group' => $group->id, 'student' => $student->id]) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите исключить студента {{$student->name}} {{$student->surname}} {{$student->lastname}} из группы {{$group->name}}?');">
@@ -36,16 +38,18 @@
 
    <div>
       <div class="flex items-center gap-4">
-         <h1 class="text-xl">Список студентов, которых можно добавить:</h1>
+         <h1 class="text-2xl font-semibold mb-4">Список студентов, которых можно добавить:</h1>
          <span class="tooltip" data-tooltip="Показаны студенты, не состоящие в группах, либо если это подгруппа, состоящии в родительской группе">
             <i class="fas fa-info-circle text-xl"></i>
          </span>
       </div>
+      <ul class="space-y-2">
       @forelse ($students as $student)
          @if(!empty($group->subgroup))
-            @if($student->groups->contains('id', $group->subgroup) && !$group->students->contains('id', $student->id))
-                  <div class="flex items-center gap-4">
-                     <a class="hover:underline flex items-center gap-4" href="{{ route('admin.showUser', ['student' => $student->id]) }}">
+            @if($student->groups->contains('id', $group->subgroup) && !$group->students->contains('id', $student->id)) 
+               <li class="hover:underline flex items-center gap-4">
+                  <div class="flex items-center gap-4 ">
+                     <a class="hover:underline flex items-center gap-4 " href="{{ route('admin.showUser', ['student' => $student->id]) }}">
                         {{ $student->name }} {{ $student->surname }} {{ $student->lastname }}
                      </a>
                      <form action="{{ route('admin.attachStudent', ['group' => $group->id, 'student' => $student->id]) }}" method="post"

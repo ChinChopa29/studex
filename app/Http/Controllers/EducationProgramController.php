@@ -103,8 +103,7 @@ class EducationProgramController extends Controller
 
     public function destroy(EducationProgram $educationProgram) {
         $educationProgram->delete();
-        $educationPrograms = EducationProgram::all();
-        return view('admin.education-programs', compact('educationPrograms'))->with('success', 'Образовательная программа успешно удалена');
+        return redirect()->route('admin.education-programs')->with('success', 'Образовательная программа успешно удалена');
     }
     
     public function search(Request $request)

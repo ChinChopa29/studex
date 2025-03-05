@@ -112,4 +112,32 @@ class CoursController extends Controller
         $editing = true;
         return view('admin.show.course', compact('course', 'editing'));
     }
+
+    public function update(Course $course, Request $request) {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'credits' => 'required|integer|min:0',
+                'semester' => 'required|integer|min:1|max:10',
+                'type' => 'required|in:Обязательный,Элективный',
+                'degree' => 'required|in:Бакалавриат,Магистратура,Аспирантура',
+                'code' => 'string|max:50',
+            ]);
+            
+            $course->update($validated);
+    
+            return redirect()->route('admin.showCourse', $course->id)
+                             ->with('success', 'Курс успешно обновлен');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->validator)->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Произошла ошибка. Пожалуйста, попробуйте снова.'])->withInput();
+        }
+    }
+
+    public function destroy(Course $course) {
+        $course->delete();
+        return redirect()->route('admin.showCourses')->with('success', 'Курс успешно удален');
+    }
 }

@@ -47,7 +47,10 @@ Route::middleware(['is_admin'])->prefix('admin')->group(function () {
       Route::put('/{group}/update', [GroupController::class, 'update'])->name('admin.updateGroup');
 
       // Удаление студента из группы
-      Route::delete('/{group}/{student}/delete', [GroupController::class, 'detach'])->name('admin.detachUser');
+      Route::delete('/{group}/detach-student/{student}', [GroupController::class, 'detachUser'])->name('admin.detachUser');
+
+      // Удаление преподавателя из группы
+      Route::delete('/{group}/detach-teacher/{teacher}', [GroupController::class, 'detachTeacher'])->name('admin.detachTeacher');
 
       // Удаление группы
       Route::delete('/{group}/delete', [GroupController::class, 'destroy'])->name('admin.destroyGroup');

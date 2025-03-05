@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EducationProgram;
 use App\Models\Group;
 use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class GroupController extends Controller
@@ -131,13 +132,15 @@ class GroupController extends Controller
     }
     
     public function show(Group $group) {
-        return view('admin.show.group', compact('group'));
+        $teachers = Teacher::all();
+        return view('admin.show.group', compact('group', 'teachers'));
     }
 
     public function edit(Group $group) {
         $editing = true;
+        $teachers = Teacher::all();
         $educationPrograms = EducationProgram::all();
-        return view('admin.show.group', compact('editing', 'group', 'educationPrograms'));
+        return view('admin.show.group', compact('editing', 'group', 'educationPrograms', 'teachers'));
     }
 
     public function update(Group $group, Request $request) {
@@ -147,8 +150,13 @@ class GroupController extends Controller
                 'admission_year' => 'required|min:4|max:5',
                 'graduation_year' => 'required|min:4|max:5',
                 'education_program_id' => 'required',
+                'teacher' => 'nullable',
             ]);
             
+            if (!empty($validated['teacher'])) {
+                $group->teachers()->attach($validated['teacher']);
+            }
+
             $group->update($validated);
     
             return redirect()->route('admin.showGroup', $group->id)
@@ -160,17 +168,23 @@ class GroupController extends Controller
         }
     }
 
-    public function detach($groupId, $studentId) {
+    public function detachUser($groupId, $studentId) {
         $group = Group::findOrFail($groupId);
         $group->students()->detach($studentId);
 
         return redirect()->back()->with('success', 'Студент успешно исключен из группы');
     }
 
+    public function detachTeacher($groupId, $teacherId) {
+        $group = Group::findOrFail($groupId);
+        $group->teachers()->detach($teacherId);
+
+        return redirect()->back()->with('success', 'Преподаватель успешно исключен из группы');
+    }
+
     public function destroy(Group $group) {
         $group->delete();
-        $groups = Group::all();
-        return view('admin.groups', compact('groups'))->with('success', 'Группа успешно удалена');
+        return redirect()->route('admin.groups')->with('success', 'Группа успешно удалена');
     }
 
     public function addStudent(Group $group) {

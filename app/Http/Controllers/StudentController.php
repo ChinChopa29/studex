@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\Student;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -188,6 +189,8 @@ class StudentController extends Controller
             'admission_year' => 'required|digits:4',
             'graduation_year' => 'required|digits:4',
             'education_program_id' => 'required|exists:education_programs,id',
+            'email' => 'required|email|unique:students,email,' . $student->id, 
+            'plain_password' => 'nullable|min:5', 
         ], [
             'name.required' => 'Поле "Имя" обязательно.',
             'surname.required' => 'Поле "Фамилия" обязательно.',
@@ -204,12 +207,25 @@ class StudentController extends Controller
             'graduation_year.digits' => 'Год окончания должен содержать 4 цифры.',
             'education_program_id.required' => 'Выберите образовательную программу.',
             'education_program_id.exists' => 'Выбранная образовательная программа не существует.',
+            'email.required' => 'Введите корпоративную почту',
+            'email.unique' => 'Данная почта уже занята',
+            'plain_password.min' => 'Пароль должен содержать минимум 5 символов',
         ]);
-
+    
+        // Проверяем, был ли введен новый пароль
+        if (!empty($validated['plain_password'])) {
+            $validated['password'] = Hash::make($validated['plain_password']); // Хешируем пароль
+            $student->plain_password = $validated['plain_password']; // Сохраняем plain_password
+        }
+    
+        unset($validated['plain_password']); // Удаляем plain_password из массива перед обновлением
+    
         $student->update($validated);
-
-        return redirect()->back()->with('success', 'Студент успешно обновлен!');
-    }   
+    
+        return redirect()->route('admin.showUser', $student->id)->with('success', 'Студент успешно обновлен!');
+    }
+    
+    
 
     public function destroy(Student $student) {
         $student->delete();

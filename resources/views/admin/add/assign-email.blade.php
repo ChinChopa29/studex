@@ -4,15 +4,19 @@
 @endsection
 
 @section('content')
-<div class="text-white bg-slate-800 m-4 rounded-lg flex flex-col p-4">
-   <div class="flex items-center gap-4 mb-8">
-      <a href="{{route('admin.index')}}"><i class="fa fa-arrow-left text-2xl hover:text-gray-400 hover:border-gray-400 transition-all duration-200 border-2 rounded-full p-1"></i></a>
-      <h1 class="text-2xl"><i class="fas fa-list text-2xl "></i> Выдача почт и паролей</h1>
-   </div>    
+<div class="bg-slate-800 text-white m-4 p-6 rounded-2xl shadow-lg">
+   <div class="flex items-center gap-4 mb-6">
+      <a href="{{route('admin.index') }}" class="p-2 border-2 border-transparent rounded-full hover:border-gray-400 transition">
+         <i class="fa fa-arrow-left text-2xl hover:text-gray-400"></i>
+      </a>
+      <h1 class="text-2xl font-semibold flex items-center gap-2">
+         <i class="fas fa-list text-2xl"></i> Выдача почт и паролей
+      </h1>
+   </div>   
 
       <form action="{{route('admin.assignEmails')}}" method="post">
          @csrf
-         <button type="submit" class="bg-green-600 hover:bg-green-700 transition-all duration-200 rounded-lg py-2 px-4 text-lg shadow-md mb-4 w-full md:w-1/3">Выдать</button>
+         <button type="submit" class="w-full md:w-1/3 bg-green-600 hover:bg-green-700 transition duration-200 rounded-lg py-2 px-4 text-lg font-medium shadow-md flex items-center justify-center gap-2 mb-4">Выдать</button>
       </form>
    
       
@@ -34,7 +38,7 @@
       @endif
    </div>
 
-   <a href="{{ route('admin.resetEmails') }}" class="bg-red-500 hover:bg-red-700 transition-all duration-200 rounded-lg py-2 px-4 text-lg shadow-md w-full md:w-1/3 mb-4 text-center">
+   <a href="{{ route('admin.resetEmails') }}" class="w-full md:w-1/3 bg-red-500 hover:bg-red-600 transition duration-200 rounded-lg py-2 px-4 text-lg font-medium shadow-md flex items-center justify-center gap-2 mb-4">
       Очистить данные
    </a>
 
