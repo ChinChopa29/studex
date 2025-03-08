@@ -8,11 +8,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsAdmin
+class IsTeacher
 {
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::guard('admin')->check() && Auth::guard('admin')->user()->role === 'admin') {
+        $teacher = Auth::guard('teacher')->user();
+        $admin = Auth::guard('admin')->user();
+
+        if ($teacher || $admin) {
             return $next($request);
         }
 
@@ -24,4 +32,3 @@ class IsAdmin
         return abort(404);
     }
 }
-

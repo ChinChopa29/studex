@@ -81,6 +81,9 @@ Route::middleware(['is_admin'])->prefix('admin')->group(function () {
 
       // Удаление курса
       Route::delete('/{course}/delete', [CoursController::class, 'destroy'])->name('admin.destroyCourse');
+
+      // Удаление преподавателя из курса
+      Route::delete('/{course}/detach-teacher/{teacher}', [CoursController::class, 'detachTeacherCourse'])->name('admin.detachTeacherCourse');
    });
 
    // Поиск программ

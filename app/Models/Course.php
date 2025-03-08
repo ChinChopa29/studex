@@ -18,4 +18,14 @@ class Course extends Model
     public function educationPrograms() {
         return $this->belongsToMany(EducationProgram::class, 'course_education_program');
     }
+
+    public function students()
+    {
+        return $this->belongsToMany(Student::class, 'student_course');
+    }
+
+    public function groups()
+    {
+        return $this->belongsToMany(Group::class, 'group_course');
+    }
 }

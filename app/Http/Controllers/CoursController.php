@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\EducationProgram;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class CoursController extends Controller
@@ -15,7 +16,8 @@ class CoursController extends Controller
     }
 
     public function show(Course $course) {
-        return view('admin.show.course', compact('course'));
+        $teachers = Teacher::all();
+        return view('admin.show.course', compact('course', 'teachers'));
     }
 
     public function create() {
@@ -109,8 +111,9 @@ class CoursController extends Controller
     }
 
     public function edit(Course $course) {
+        $teachers = Teacher::all();
         $editing = true;
-        return view('admin.show.course', compact('course', 'editing'));
+        return view('admin.show.course', compact('course', 'editing', 'teachers'));
     }
 
     public function update(Course $course, Request $request) {
@@ -123,7 +126,12 @@ class CoursController extends Controller
                 'type' => 'required|in:Обязательный,Элективный',
                 'degree' => 'required|in:Бакалавриат,Магистратура,Аспирантура',
                 'code' => 'string|max:50',
+                'teacher' => 'nullable',
             ]);
+
+            if (!empty($validated['teacher'])) {
+                $course->teachers()->attach($validated['teacher']);
+            }
             
             $course->update($validated);
     
@@ -134,6 +142,13 @@ class CoursController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Произошла ошибка. Пожалуйста, попробуйте снова.'])->withInput();
         }
+    }
+
+    public function detachTeacherCourse($courseId, $teacherId) {
+        $course = Course::findOrFail($courseId);
+        $course->teachers()->detach($teacherId);
+
+        return redirect()->back()->with('success', 'Преподаватель успешно исключен из курса');
     }
 
     public function destroy(Course $course) {

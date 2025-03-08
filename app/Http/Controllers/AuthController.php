@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Message;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
@@ -31,22 +32,25 @@ class AuthController extends Controller
             }
         }
 
-        // if ($teacher = Teacher::where('email', $validated['email'])->first()) {
-        //     if (Hash::check($validated['password'], $teacher->password)) {
-        //         auth()->guard('teacher')->login($teacher);
-        //         request()->session()->regenerate();
-        //         return redirect()->route('index');
-        //     }
-        // }
+        if ($teacher = Teacher::where('email', $validated['email'])->first()) {
+            if (Hash::check($validated['password'], $teacher->password)) {
+                auth()->guard('teacher')->login($teacher);
+                request()->session()->regenerate();
+                $messages = Message::all();
+                return redirect()->route('teacherCoursesIndex', compact('messages'));    
+            }
+        }
 
         if ($student = Student::where('email', $validated['email'])->first()) {
             if (Hash::check($validated['password'], $student->password)) {
                 auth()->guard('student')->login($student);
                 request()->session()->regenerate();
-                return redirect()->route('index');
+                $messages = Message::all();
+                return redirect()->route('studentCoursesIndex', compact('messages'));
             }
         }
 
+        
         return redirect()->route('login')->withErrors([
             'login' => 'Неверная почта или пароль'
         ]);

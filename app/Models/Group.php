@@ -18,6 +18,11 @@ class Group extends Model
         return $this->belongsToMany(Student::class, 'group_student');
     }
 
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'group_course');
+    }
+
     public function educationProgram()
     {
         return $this->belongsTo(EducationProgram::class, 'education_program_id');

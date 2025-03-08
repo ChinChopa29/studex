@@ -36,6 +36,19 @@
             <label for="description" class="text-lg font-medium">Описание</label>
             <textarea id="description" name="description" class="w-full md:w-1/3 bg-gray-200 text-black border-2 border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">{{ $course->description }}</textarea>
          </div>
+
+         <div class="flex flex-col">
+            <label for="teacher" class="text-lg font-medium">Преподаватель курса</label>
+            <select id="teacher" name="teacher"
+                class="w-full md:w-1/3 bg-gray-200 text-black border-2 border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                @foreach($teachers as $teacher)
+                    <option value="{{ $teacher->id }}" 
+                        @if(isset($course->teachers) && $course->teachers->contains('id', $teacher->id)) selected @endif>
+                        {{ $teacher->surname }} {{ $teacher->name }} {{ $teacher->lastname }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
          
          <div class="flex flex-col">
             <label for="code" class="text-lg font-medium">Код курса</label>
@@ -78,6 +91,30 @@
             </a>
          </div>
       </form>
+
+      @if($course->teachers->isNotEmpty())
+      <div class="mt-6">
+         <h1 class="text-2xl font-semibold mb-4">Куратор:</h1>
+         <ul class="space-y-2">
+            @foreach($course->teachers as $teacher)
+               <li class="hover:underline flex items-center gap-4">
+                  <a href="{{ route('admin.showTeacher', ['teacher' => $teacher->id]) }}" class="text-gray-300 hover:text-gray-400">
+                     {{ $teacher->name }} {{ $teacher->surname }} {{ $teacher->lastname }}
+                  </a>
+                  @if($editing ?? false)
+                     <form action="{{ route('admin.detachTeacherCourse', ['course' => $course->id, 'teacher' => $teacher->id]) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите исключить преподавателя {{$teacher->name}} {{$teacher->surname}} {{$teacher->lastname}} из курса {{$course->name}}?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit">
+                           <i class="fas fa-x text-xl text-red-500 hover:text-red-700 transition-all duration-200"></i>
+                        </button>
+                     </form>
+                  @endif
+               </li>
+            @endforeach
+         </ul>
+      </div>
+   @endif
    @else
       <div class="space-y-4">
          <div class="flex flex-col">
@@ -86,7 +123,15 @@
          </div>
          <div class="flex flex-col">
             <label class="text-lg font-medium">Куратор</label>
-            <p class="text-gray-300">{{ $course->teachers->pluck('name')->join(', ') ?: 'Нет данных' }}</p>
+            <p class="text-gray-300">
+                {!! $course->teachers->isNotEmpty() 
+                    ? $course->teachers->map(fn($teacher) => 
+                        '<a href="'.route('admin.showTeacher', ['teacher' => $teacher->id]).'" class="text-gray-300 hover:underline hover:text-gray-400">'
+                        ."{$teacher->surname} {$teacher->name} {$teacher->lastname}</a>"
+                    )->join(', ') 
+                    : 'Нет данных' 
+                !!}
+            </p>
          </div>
          <div class="flex flex-col">
             <label class="text-lg font-medium">Описание</label>
@@ -124,6 +169,8 @@
         </form>
       </div>
    @endif
+
+   
 </div>
 
 <script src="{{ asset('js/alert-pop-up.js') }}"></script>

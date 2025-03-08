@@ -97,7 +97,7 @@
                     : 'Нет данных' 
                 !!}
             </p>
-        </div>
+         </div>
         
 
          <div class="flex flex-col">
@@ -149,7 +149,7 @@
                      {{ $teacher->name }} {{ $teacher->surname }} {{ $teacher->lastname }}
                   </a>
                   @if($editing ?? false)
-                     <form action="{{ route('admin.detachTeacher', ['group' => $group->id, 'teacher' => $teacher->id]) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите исключить преподавателя {{$teacher->name}} {{$teacher->surname}} {{$teacher->lastname}} из группы {{$teacher->name}}?');">
+                     <form action="{{ route('admin.detachTeacher', ['group' => $group->id, 'teacher' => $teacher->id]) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите исключить преподавателя {{$teacher->name}} {{$teacher->surname}} {{$teacher->lastname}} из группы {{$group->name}}?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit">
