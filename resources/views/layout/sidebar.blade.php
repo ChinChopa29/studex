@@ -32,7 +32,7 @@
          </div>
       </a>
       
-      <a href="#">
+      <a href="{{ route('mailIndex') }}">
          <div class="flex items-center gap-2 hover:bg-slate-700 transition-all duration-200 w-full pl-5 py-2 relative">
                <div class="relative">
                   <img src="{{ asset('img/logos/mail.png') }}" alt="Mail Icon" class="w-7">

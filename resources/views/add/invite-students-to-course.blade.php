@@ -51,26 +51,25 @@
         let groupId = $(this).val();
         if (groupId) {
             $.ajax({
-                url: "{{ route('getGroupStudents') }}",
+                url: "/teacher-courses/" + groupId + "/get-group-students",
                 type: "GET",
-                data: { 
-                    group_id: groupId,
+                data: {
                     _token: "{{ csrf_token() }}"
                 },
                 success: function (response) {
-                    console.log(response); 
+                    console.log('Success:', response);
                     $('#studentsList').html(response);
                 },
                 error: function (xhr, status, error) {
-                    console.error(xhr.responseText); 
+                    console.error('Error:', xhr.responseText);
                     $('#studentsList').html('<p class="text-red-500">Ошибка загрузки студентов</p>');
                 }
             });
         } else {
             $('#studentsList').html('<p class="text-gray-500">Выберите группу, чтобы увидеть студентов.</p>');
         }
-   });
-   });
+    });
+});
 </script>
 @include('include.success-message')
 @endsection

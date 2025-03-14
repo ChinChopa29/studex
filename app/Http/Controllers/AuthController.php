@@ -9,10 +9,19 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 
 class AuthController extends Controller
 {
     public function login() {
+        if (Auth::guard('teacher')->check()) {
+            return redirect()->route('teacherCoursesIndex'); 
+        }
+    
+        if (Auth::guard('student')->check()) {
+            return redirect()->route('studentCoursesIndex'); 
+        }
+
         return view('auth.auth');
     }
 
@@ -27,7 +36,6 @@ class AuthController extends Controller
             if (Hash::check($validated['password'], $admin->password)) {
                 auth()->guard('admin')->login($admin);
                 request()->session()->regenerate();
-        
                 return redirect()->route('admin.index');
             }
         }

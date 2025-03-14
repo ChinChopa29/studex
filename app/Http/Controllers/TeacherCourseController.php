@@ -15,8 +15,12 @@ class TeacherCourseController extends Controller
 {
     public function index() {
         $teacher = Auth::user(); 
-        $courses = $teacher->courses()->get();
-        return view('courses', compact('courses'));
+        if ($teacher) {
+            $courses = $teacher->courses()->get(); 
+            return view('courses', compact('courses'));
+        } else {
+            return redirect()->route('login')->with('error', 'Преподаватель не найден.');
+        }
     }
 
     public function show(Course $course) {
@@ -35,29 +39,49 @@ class TeacherCourseController extends Controller
     
         if (!$group) {
             return redirect()->back()->with('error', 'Группа не найдена');
-        }    
+        }
     
-        $group->courses()->attach($course->id, ['status' => 'pending']);
+        $invitedCount = 0;
+        $skippedCount = 0;
     
         foreach ($group->students as $student) { 
+            $alreadyInvited = Message::where('receiver_id', $student->id)
+                ->where('type', 'invite')
+                ->where('additional', $course->id)
+                ->exists();
+    
+            $alreadyEnrolled = $student->courses()
+                ->where('course_id', $course->id)
+                ->where('status', 'accepted')
+                ->exists();
+    
+            if ($alreadyInvited || $alreadyEnrolled) {
+                $skippedCount++;
+                continue; 
+            }
+    
             $message = new Message([
                 'message' => 'Вы были приглашены на курс "'.$course->name.'".',
                 'type' => 'invite',
                 'status' => false,
+                'additional' => $course->id,
             ]);
     
             $message->sender()->associate($teacher);
             $message->receiver()->associate($student); 
-            $message->save();       
+            $message->save();   
+    
+            $invitedCount++;
         }
     
         return redirect()->route('teacherCourseInviteForm', ['course' => $course->id])
-            ->with('success', 'Приглашения на курс отправлены!');
+            ->with('success', "Приглашения отправлены: $invitedCount. Пропущено: $skippedCount.");
     }
+    
+    
     
 
     public function getGroupStudents(Request $request) {
-    
         if (!$request->group_id) {
             return response()->json(['error' => 'Не передан ID группы'], 400);
         }

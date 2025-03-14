@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Message extends Model
 {
-    protected $fillable = ['message', 'type', 'status'];
+    use SoftDeletes;
+
+    protected $dates = ['deleted_at'];
+
+    protected $fillable = ['receiver_id', 'receiver_type', 'sender_id', 'sender_type', 'message', 'type', 'status', 'deleted_by', 'deleted_by_receiver', 'deleted_by_sender'];
 
     public function receiver()
     {
@@ -16,5 +21,9 @@ class Message extends Model
     public function sender()
     {
         return $this->morphTo();
+    }
+    public function files()
+    {
+        return $this->hasMany(MessageFile::class, 'message_id', 'id');
     }
 }

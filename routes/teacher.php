@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth:admin,teacher'])->group(function () {
 
-   Route::prefix('courses')->group(function () {
+   Route::prefix('teacher-courses')->group(function () {
+
       Route::get('/', [TeacherCourseController::class, 'index'])->name('teacherCoursesIndex');
-      Route::get('/get-group-students', [TeacherCourseController::class, 'getGroupStudents'])->name('getGroupStudents');
 
       Route::get('/{course}', [TeacherCourseController::class, 'show'])->name('teacherCourseShow');
+
+      Route::get('/{group_id}/get-group-students', [TeacherCourseController::class, 'getGroupStudents'])->name('getGroupStudents');
 
       Route::get('/{course}/exercise', [TeacherCourseController::class, 'tasksShow'])->name('teacherCourseTasks');
 
@@ -28,3 +30,4 @@ Route::middleware(['auth:admin,teacher'])->group(function () {
 
    Route::get('/profile{student}', [UserController::class, 'studentProfile'])->name('studentProfile');
 });
+
