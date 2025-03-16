@@ -19,7 +19,8 @@ class MailController extends Controller
                            ->where('receiver_type', $userType)
                            ->whereNull('deleted_by_receiver_at') 
                            ->whereNull('deleted_at') 
-                           ->get();
+                           ->orderBy('created_at', 'desc') 
+                           ->paginate(10);
     
         return view('mail', compact('messages', 'user'));
     }
@@ -40,8 +41,6 @@ class MailController extends Controller
     
         return view('show.mail', compact('message'));
     }
-    
-    
     
 
     public function showSended(Message $message) {
@@ -202,7 +201,8 @@ class MailController extends Controller
         $messages = Message::where('sender_id', $user->id)
                            ->where('sender_type', $userType)
                            ->whereNull('deleted_by_sender_at') 
-                           ->get();
+                           ->orderBy('created_at', 'desc') 
+                           ->paginate(10);
     
         return view('sended-mail', compact('messages'));
     }
@@ -222,7 +222,8 @@ class MailController extends Controller
                       ->whereNotNull('deleted_by_sender_at')
                       ->where('deleted_by_sender', false); 
             })
-            ->get();
+            ->orderBy('created_at', 'desc') 
+            ->paginate(10);
     
         return view('recent-deleted-mail', compact('messages'));
     }
@@ -263,15 +264,18 @@ class MailController extends Controller
                 Message::whereIn('id', $messageIds)
                     ->where(function ($query) use ($userId) {
                         $query->where('receiver_id', $userId)
-                              ->orWhere('sender_id', $userId);
+                                ->orWhere('sender_id', $userId);
                     })
                     ->update([
                         'status' => DB::raw("CASE WHEN receiver_id = $userId AND status = 0 THEN 1 ELSE status END"),
                         'deleted_by_receiver_at' => DB::raw("CASE WHEN receiver_id = $userId THEN NOW() ELSE deleted_by_receiver_at END"),
                         'deleted_by_sender_at' => DB::raw("CASE WHEN sender_id = $userId THEN NOW() ELSE deleted_by_sender_at END"),
                     ]);
-    
+            
+                DB::table('favorite_messages')->whereIn('message_id', $messageIds)->delete();
+            
                 return redirect()->back()->with('success', 'Выбранные сообщения перемещены в корзину.');
+                
     
             case 'forceDelete':
                 Message::whereIn('id', $messageIds)
@@ -285,10 +289,121 @@ class MailController extends Controller
                     ]);
     
                 return redirect()->back()->with('success', 'Выбранные сообщения полностью удалены.');
+
+            case 'favorite':
+                $user = Auth::user(); 
+            
+                $favorites = [];
+                foreach ($messageIds as $messageId) {
+                    $favorites[] = [
+                        'user_id' => $user->id,
+                        'user_type' => get_class($user), 
+                        'message_id' => $messageId,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            
+                DB::table('favorite_messages')->insertOrIgnore($favorites);
+            
+                return redirect()->back()->with('success', 'Выбранные сообщения добавлены в избранное.');
+
+            case 'unfavorite':
+                DB::table('favorite_messages')
+                    ->where('user_id', $userId)
+                    ->where('user_type', get_class($user)) 
+                    ->whereIn('message_id', $messageIds)
+                    ->delete();
+            
+                return redirect()->back()->with('success', 'Выбранные сообщения удалены из избранного.');
+                
             
             default:
                 return redirect()->back()->with('error', 'Неизвестное действие.');
         }
     }
+
+    public function favorite() {
+        $user = Auth::user();
+        $userType = get_class($user);
     
+        $favoriteMessageIds = DB::table('favorite_messages')
+            ->where('user_id', $user->id)
+            ->where('user_type', $userType)
+            ->pluck('message_id'); 
+    
+        $messages = Message::whereIn('id', $favoriteMessageIds)
+                           ->orderBy('created_at', 'desc') 
+                           ->paginate(10);
+    
+        return view('favorite-messages', compact('messages', 'user'));
+    }
+    
+    
+    public function search(Request $request) {
+        $query = $request->get('search');
+        $mailType = $request->get('mail_type'); 
+        $user = Auth::user();
+        
+        $messages = Message::with('sender');
+    
+        switch ($mailType) {
+            case 'sent':
+                $messages->where('sender_id', $user->id)->where('sender_type', get_class($user));
+                $view = 'sended-mail';
+                break;
+    
+            case 'favorite':
+                $messages->whereHas('favorites', function ($q) use ($user) {
+                    $q->where('user_id', $user->id)->where('user_type', get_class($user));
+                });
+                $view = 'favorite-messages';
+                break;
+    
+            case 'deleted':
+                $messages->where(function ($query) use ($user) {
+                        $query->where('receiver_id', $user->id)
+                                ->whereNotNull('deleted_by_receiver_at')
+                                ->where('deleted_by_receiver', false);
+                    })
+                    ->orWhere(function ($query) use ($user) {
+                        $query->where('sender_id', $user->id)
+                                ->whereNotNull('deleted_by_sender_at')
+                                ->where('deleted_by_sender', false);
+                    });
+            
+                $messages->where(function ($q) use ($query) {
+                    $q->where('message', 'LIKE', "%$query%")
+                        ->orWhereDate('created_at', $query)
+                        ->orWhereHas('sender', function ($q) use ($query) {
+                            $q->where('surname', 'LIKE', "%$query%")
+                            ->orWhere('name', 'LIKE', "%$query%");
+                        });
+                });
+            
+                $view = 'recent-deleted-mail';
+                break;
+                
+                
+    
+            default: 
+                $messages->where('receiver_id', $user->id)->where('receiver_type', get_class($user));
+                $view = 'mail';
+                break;
+        }
+    
+        $messages->where(function ($q) use ($query) {
+            $q->where('message', 'LIKE', "%$query%")
+              ->orWhereDate('created_at', $query);
+        })
+        ->orWhereHas('sender', function ($q) use ($query) {
+            $q->where('surname', 'LIKE', "%$query%")
+              ->orWhere('name', 'LIKE', "%$query%");
+        });
+    
+        $messages = $messages->paginate(10)->appends(request()->query());
+    
+       
+        return view($view, compact('messages'));
+    }
 }

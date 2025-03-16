@@ -10,12 +10,25 @@
 @section('content')
 
 @if($user) 
-@section('page-name', 'Входящие')
+@section('page-name', 'Входящие') 
 @include('layout.mail-menu')
+
+@push('return-to')
+    {{ route('mailIndex') }}
+@endpush
+@include('layout.mail-search', ['mail_type' => 'inbox'])
+
       <form action="{{ route('mailBulkAction') }}" method="POST" id="bulkActionForm">
          @csrf
          <div class="divide-y divide-gray-600">
-             @forelse ($messages as $message)
+            @if($messages->count() > 1)
+                <div class="flex items-center gap-6 mb-4 pl-4">
+                    <input type="checkbox" id="selectAll" class="w-5 h-5 border border-gray-400 rounded-lg">
+                    <label for="selectAll" class="text-gray-300 cursor-pointer">Выбрать все</label>
+                </div>
+            @endif
+            @forelse ($messages as $message)
+             
                  <div class="relative flex items-center px-4 py-6 hover:bg-slate-700 transition-all gap-4 w-full 
                      {{ $message->status === 0 ? 'bg-slate-900 font-bold' : 'bg-slate-800' }}">
                      
@@ -60,8 +73,10 @@
              </button>
          </div>
      </form>
-     
-   </div>
+    <div class="mt-6">
+        {{ $messages->links() }}
+    </div>
+</div>
 @endif
 <script>
    document.addEventListener("DOMContentLoaded", function() {
@@ -78,6 +93,28 @@
        });
    });
 </script>
-
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkboxes = document.querySelectorAll(".messageCheckbox");
+        const bulkActions = document.getElementById("bulkActions");
+        const selectAllCheckbox = document.getElementById("selectAll");
+ 
+        function toggleBulkActions() {
+            const anyChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
+            bulkActions.style.display = anyChecked ? "flex" : "none";
+        }
+ 
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", toggleBulkActions);
+        });
+ 
+        selectAllCheckbox.addEventListener("change", function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            toggleBulkActions(); 
+        });
+    });
+</script>
 @include('include.success-message')
 @endsection

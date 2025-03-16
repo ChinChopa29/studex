@@ -26,4 +26,8 @@ class Message extends Model
     {
         return $this->hasMany(MessageFile::class, 'message_id', 'id');
     }
+    public function favorites()
+    {
+        return $this->belongsToMany(User::class, 'favorite_messages', 'message_id', 'user_id');
+    }
 }

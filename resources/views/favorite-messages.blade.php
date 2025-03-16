@@ -1,23 +1,22 @@
-@extends('layout.layout')
-
-@section('title') 
-Отправленные сообщения
-@endsection
-
-@section('content')
-
 @php
    $user = Auth::guard('admin')->user() ?? Auth::guard('teacher')->user() ?? Auth::guard('student')->user();
 @endphp
 
+@extends('layout.layout')
+@section('title') 
+Почта
+@endsection
+
+@section('content')
+
 @if($user) 
-@section('page-name', 'Отправленные сообщения')
+@section('page-name', 'Избранное')
 @include('layout.mail-menu')
 
 @push('return-to')
-    {{ route('mailSended') }}
+    {{ route('mailFavorite') }}
 @endpush
-@include('layout.mail-search', ['mail_type' => 'sent'])
+@include('layout.mail-search', ['mail_type' => 'favorite'])
 
       <form action="{{ route('mailBulkAction') }}" method="POST" id="bulkActionForm">
          @csrf
@@ -30,12 +29,12 @@
             @endif
             @forelse ($messages as $message)
                  <div class="relative flex items-center px-4 py-6 hover:bg-slate-700 transition-all gap-4 w-full 
-                     {{ $message->status === 0 ? 'bg-slate-800' : 'bg-slate-800' }}">
+                     {{ $message->status === 0 ? 'bg-slate-900 font-bold' : 'bg-slate-800' }}">
                      
                      <input type="checkbox" name="messages[]" value="{{ $message->id }}" 
                             class="messageCheckbox w-5 h-5 border border-gray-400 rounded-lg mr-4 flex-shrink-0 relative z-10">
      
-                     <a href="{{ route('messageShowSended', ['message' => $message->id]) }}" 
+                     <a href="{{ route('messageShow', ['message' => $message->id]) }}" 
                         class="absolute inset-0 flex items-center gap-4 px-4 py-6 text-white no-underline">
                          
                          <div class="w-1/6 truncate text-gray-300 pl-12">
@@ -54,27 +53,26 @@
                      </a>
                  </div>
              @empty
-                 <h1 class="text-center text-gray-500">📭 У вас пока нет отправленных сообщений</h1>
+                 <h1 class="text-center text-gray-500">📭 У вас пока нет избранных сообщений</h1>
              @endforelse
          </div>
          
          <div class="flex gap-4 mt-4" id="bulkActions" style="display: none;">
-             <button type="submit" name="action" value="favorite" 
+             <button type="submit" name="action" value="unfavorite" 
                      class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200">
-                 В избранное
+                 Удалить из избранного
              </button>
              <button type="submit" name="action" value="delete" 
                      class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200">
                  Удалить
              </button>
          </div>
-    </form>
-    <div class="mt-6">
-    {{ $messages->links() }}
-    </div>
-</div>
+   </form>
+   <div class="mt-6">
+      {{ $messages->links() }}
+   </div>
+   </div>
 @endif
-@include('include.success-message')
 <script>
    document.addEventListener("DOMContentLoaded", function() {
        const checkboxes = document.querySelectorAll(".messageCheckbox");
@@ -113,4 +111,5 @@
         });
     });
 </script>
+@include('include.success-message')
 @endsection

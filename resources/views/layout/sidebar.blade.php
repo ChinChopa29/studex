@@ -36,9 +36,13 @@
          <div class="flex items-center gap-2 hover:bg-slate-700 transition-all duration-200 w-full pl-5 py-2 relative">
                <div class="relative">
                   <img src="{{ asset('img/logos/mail.png') }}" alt="Mail Icon" class="w-7">
-                  @if($unreadMessagesCount > 0)
+                  @if($unreadMessagesCount < 10 && $unreadMessagesCount > 0)
                      <div class="absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                         {{ $unreadMessagesCount }}
+                     </div>
+                  @elseif($unreadMessagesCount > 9)
+                     <div class="absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        9+
                      </div>
                   @endif
                </div>
