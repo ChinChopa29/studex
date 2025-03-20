@@ -32,4 +32,8 @@ class Student extends Authenticatable
     {
         return $this->belongsTo(EducationProgram::class, 'education_program_id');
     }
+    
+    public function grades() {
+        return $this->hasMany(TaskGrade::class);
+    }
 }

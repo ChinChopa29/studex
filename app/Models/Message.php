@@ -11,7 +11,7 @@ class Message extends Model
 
     protected $dates = ['deleted_at'];
 
-    protected $fillable = ['receiver_id', 'receiver_type', 'sender_id', 'sender_type', 'message', 'type', 'status', 'deleted_by', 'deleted_by_receiver', 'deleted_by_sender'];
+    protected $fillable = ['receiver_id', 'receiver_type', 'sender_id', 'sender_type', 'message', 'type', 'status', 'additional', 'deleted_by', 'deleted_by_receiver', 'deleted_by_sender'];
 
     public function receiver()
     {

@@ -167,5 +167,4 @@ Route::middleware(['is_admin'])->prefix('admin')->group(function () {
 
    });
 
-   
 });

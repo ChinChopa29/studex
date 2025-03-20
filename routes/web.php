@@ -1,9 +1,10 @@
-<?php
 
+<?php
 require __DIR__.'/admin.php';
 require __DIR__.'/teacher.php';
-require __DIR__.'/student.php';
 require __DIR__.'/mail.php';
+require __DIR__.'/task.php';
+require __DIR__.'/course.php';
 require __DIR__.'/auth.php';
 
 use App\Http\Controllers\AuthController;

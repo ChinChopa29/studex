@@ -42,14 +42,7 @@
          @if($message->type === 'invite')
             <div class="flex flex-col">
                {{ $message->message }}
-               <div class="flex gap-4 items-center mt-4">
-                  <form action="{{route('mailAcceptInvite', ['message' => $message->id])}}">
-                     <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200">Принять</button>
-                  </form>
-                  <form action="{{route('mailDeclineInvite', ['message' => $message->id])}}">
-                     <button class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200">Отклонить</button>
-                  </form>
-               </div>
+               
             </div>
          @else
             {{ $message->message }}

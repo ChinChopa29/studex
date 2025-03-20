@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
 use App\Models\Message;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -15,11 +16,11 @@ class AuthController extends Controller
 {
     public function login() {
         if (Auth::guard('teacher')->check()) {
-            return redirect()->route('teacherCoursesIndex'); 
+            return redirect()->route('CoursesIndex'); 
         }
     
         if (Auth::guard('student')->check()) {
-            return redirect()->route('studentCoursesIndex'); 
+            return redirect()->route('CoursesIndex'); 
         }
 
         return view('auth.auth');
@@ -45,7 +46,7 @@ class AuthController extends Controller
                 auth()->guard('teacher')->login($teacher);
                 request()->session()->regenerate();
                 $messages = Message::all();
-                return redirect()->route('teacherCoursesIndex', compact('messages'));    
+                return redirect()->route('CoursesIndex', compact('messages'));    
             }
         }
 
@@ -54,7 +55,7 @@ class AuthController extends Controller
                 auth()->guard('student')->login($student);
                 request()->session()->regenerate();
                 $messages = Message::all();
-                return redirect()->route('studentCoursesIndex', compact('messages'));
+                return redirect()->route('CoursesIndex', compact('messages'));
             }
         }
 
@@ -72,4 +73,8 @@ class AuthController extends Controller
 
         return redirect()->route('login');
     }
+
+    // public function studentsShow(Course $course) {
+    //     return view('show.course-students');
+    // }
 }

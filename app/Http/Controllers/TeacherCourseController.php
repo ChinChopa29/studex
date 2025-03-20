@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TeacherCourseController extends Controller
@@ -20,7 +21,7 @@ class TeacherCourseController extends Controller
             return view('courses', compact('courses'));
         } else {
             return redirect()->route('login')->with('error', 'Преподаватель не найден.');
-        }
+    }
     }
 
     public function show(Course $course) {
@@ -45,12 +46,13 @@ class TeacherCourseController extends Controller
         $skippedCount = 0;
     
         foreach ($group->students as $student) { 
-            $alreadyInvited = Message::where('receiver_id', $student->id)
-                ->where('type', 'invite')
-                ->where('additional', $course->id)
+            $alreadyInvited = DB::table('student_course')
+                ->where('student_id', $student->id)
+                ->where('course_id', $course->id)
                 ->exists();
     
-            $alreadyEnrolled = $student->courses()
+            $alreadyEnrolled = DB::table('student_course')
+                ->where('student_id', $student->id)
                 ->where('course_id', $course->id)
                 ->where('status', 'accepted')
                 ->exists();
@@ -59,6 +61,14 @@ class TeacherCourseController extends Controller
                 $skippedCount++;
                 continue; 
             }
+    
+            DB::table('student_course')->insert([
+                'student_id' => $student->id,
+                'course_id' => $course->id,
+                'status' => 'pending', 
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
     
             $message = new Message([
                 'message' => 'Вы были приглашены на курс "'.$course->name.'".',
@@ -78,9 +88,6 @@ class TeacherCourseController extends Controller
             ->with('success', "Приглашения отправлены: $invitedCount. Пропущено: $skippedCount.");
     }
     
-    
-    
-
     public function getGroupStudents(Request $request) {
         if (!$request->group_id) {
             return response()->json(['error' => 'Не передан ID группы'], 400);
@@ -103,5 +110,23 @@ class TeacherCourseController extends Controller
         return $html;
     }
 
+    public function studentsShow(Course $course) {
+        Log::info('Course found: ', ['id' => $course->id]);
+        $groups = Group::whereHas('students', function ($query) use ($course) {
+            $query->whereHas('courses', function ($q) use ($course) {
+                $q->where('course_id', $course->id);
+            });
+        })->with(['students' => function ($query) use ($course) {
+            $query->with(['courses' => function ($q) use ($course) {
+                $q->where('course_id', $course->id)->select('student_id', 'status');
+            }]);
+        }])->get();
+    
+        return view('show.course-students', compact('course', 'groups'));
+    }
 
+    public function gradesShow(Course $course) {
+        return view('show.course-grades', compact('course'));
+    }
+    
 }

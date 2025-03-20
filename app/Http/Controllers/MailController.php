@@ -71,7 +71,7 @@ class MailController extends Controller
     
         $student->courses()->attach($courseId, ['status' => 'accepted']);
     
-        $message->delete();
+        $message->forceDelete();
     
         return redirect()->route('studentCoursesIndex')->with('success', 'Вы успешно записались на курс.');
     }

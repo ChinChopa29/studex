@@ -4,7 +4,7 @@
 
 <div class="text-white  h-screen flex flex-col justify-between">
    <div class="mt-4 flex flex-col gap-3">
-      <a href="{{ $user instanceof \App\Models\Student ? route('studentCoursesIndex') : (Route::has('teacherCoursesIndex') ? route('teacherCoursesIndex') : '#') }}" class="font-bold text-xl px-4">
+      <a href="{{ route('CoursesIndex') }}" class="font-bold text-xl px-4">
          STUDEX
       </a>
       <a href="#">
@@ -13,7 +13,7 @@
             Аккаунт
          </div>
       </a>
-      <a href="{{ $user instanceof \App\Models\Student ? route('studentCoursesIndex') : (Route::has('teacherCoursesIndex') ? route('teacherCoursesIndex') : '#') }}">
+      <a href="{{ route('CoursesIndex') }}">
          <div class="flex items-center gap-2 hover:bg-slate-700 transition-all duration-200 w-full pl-5 py-2">
              <img src="{{ asset('img/logos/book.png') }}" alt="" class="w-7">
              Курсы
@@ -71,7 +71,7 @@
       @endif
 
       @if($user && $user->role !== 'admin')
-         <a href="{{ route('studentProfile', ['student' => $user->id]) }}">
+         <a href="">
             <div class="flex items-center gap-2 hover:bg-slate-700 transition-all duration-200 w-full pl-5 py-2">
                {{ $user->name ?? 'Гость' }} {{ $user->surname ?? '' }}
             </div>
