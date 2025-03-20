@@ -1,10 +1,11 @@
 
 <?php
+
+require __DIR__.'/course.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/teacher.php';
 require __DIR__.'/mail.php';
 require __DIR__.'/task.php';
-require __DIR__.'/course.php';
 require __DIR__.'/auth.php';
 
 use App\Http\Controllers\AuthController;
@@ -22,3 +23,5 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::get('/search/{type}', [MailController::class, 'searchUsers'])->middleware('auth:admin,teacher,student');
+
+// Route::get('/{course}/students', [TeacherCourseController::class, 'studentsShow'])->name('CourseStudents');

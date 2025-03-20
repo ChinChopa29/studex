@@ -13,7 +13,6 @@
    <div class="bg-gradient-to-r from-blue-600 to-purple-600 w-full p-6 rounded-2xl shadow-lg">
       <h1 class="font-bold text-xl">Добро пожаловать в STUDEX!</h1>
       <h2>Ваша платформа для онлайн обучения</h2>
-      <a href="{{ route('showTestStudentsCourse') }}">ку</a>
    </div>
 </div>
 

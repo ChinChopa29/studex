@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Message;
 use App\Models\Student;
+use App\Models\Task;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -74,7 +75,4 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    // public function studentsShow(Course $course) {
-    //     return view('show.course-students');
-    // }
 }

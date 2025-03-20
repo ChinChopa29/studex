@@ -38,7 +38,7 @@
                      <div>
                         <h3 class="text-green-400 font-semibold">Приняли приглашение:</h3>
                         @forelse ($acceptedStudents as $student)
-                           <a href="{{ route('studentProfile', ['student' => $student->id]) }}" class="block text-white">
+                           <a href="" class="block text-white">
                               {{ $student->name }} {{ $student->surname }} {{ $student->lastname }}
                            </a>
                         @empty
@@ -48,7 +48,7 @@
                      <div>
                         <h3 class="text-yellow-400 font-semibold">Ожидают подтверждения:</h3>
                         @forelse ($pendingStudents as $student)
-                           <a href="{{ route('studentProfile', ['student' => $student->id]) }}" class="block text-white">
+                           <a href="" class="block text-white">
                               {{ $student->name }} {{ $student->surname }} {{ $student->lastname }}
                            </a>
                         @empty
@@ -59,7 +59,7 @@
                      <div>
                         <h3 class="text-red-400 font-semibold">Отклонили приглашение:</h3>
                         @forelse ($declinedStudents as $student)
-                           <a href="{{ route('studentProfile', ['student' => $student->id]) }}" class="block text-white">
+                           <a href="" class="block text-white">
                               {{ $student->name }} {{ $student->surname }} {{ $student->lastname }}
                            </a>
                         @empty
