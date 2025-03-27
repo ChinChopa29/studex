@@ -29,11 +29,20 @@ class MailController extends Controller
         $user = Auth::user();
         $userType = get_class($user);
     
-        if ($message->receiver_id !== $user->id || $message->receiver_type !== $userType) {
+        $isReceiver = $message->receiver_id === $user->id && $message->receiver_type === $userType;
+        $isSender = $message->sender_id === $user->id && $message->sender_type === $userType;
+    
+        $isFavorite = DB::table('favorite_messages')
+            ->where('user_id', $user->id)
+            ->where('user_type', $userType)
+            ->where('message_id', $message->id)
+            ->exists();
+    
+        if (!$isReceiver && !$isSender && !$isFavorite) {
             abort(403, 'У вас нет доступа к этому сообщению.');
         }
     
-        if ($message->status == 0) {
+        if ($isReceiver && $message->status == 0) {
             $message->update(['status' => 1]);
         }
     

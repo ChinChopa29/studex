@@ -11,11 +11,16 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 class AuthController extends Controller
 {
     public function login() {
+        if (Auth::guard('admin')->check()) {
+            return redirect()->route('admin.index');
+        }
+    
         if (Auth::guard('teacher')->check()) {
             return redirect()->route('CoursesIndex'); 
         }
@@ -23,7 +28,7 @@ class AuthController extends Controller
         if (Auth::guard('student')->check()) {
             return redirect()->route('CoursesIndex'); 
         }
-
+    
         return view('auth.auth');
     }
 
@@ -33,6 +38,7 @@ class AuthController extends Controller
             'email' => 'required|min:3|max:50',
             'password' => 'required|min:5',
         ]);
+
 
         if ($admin = User::where('email', $validated['email'])->first()) {
             if (Hash::check($validated['password'], $admin->password)) {
@@ -60,7 +66,6 @@ class AuthController extends Controller
             }
         }
 
-        
         return redirect()->route('login')->withErrors([
             'login' => 'Неверная почта или пароль'
         ]);

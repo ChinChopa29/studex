@@ -29,7 +29,7 @@
             @endif
             @forelse ($messages as $message)
                  <div class="relative flex items-center px-4 py-6 hover:bg-slate-700 transition-all gap-4 w-full 
-                     {{ $message->status === 0 ? 'bg-slate-900 font-bold' : 'bg-slate-800' }}">
+                     {{ $message->status === 0 ? 'bg-slate-800' : 'bg-slate-800' }}">
                      
                      <input type="checkbox" name="messages[]" value="{{ $message->id }}" 
                             class="messageCheckbox w-5 h-5 border border-gray-400 rounded-lg mr-4 flex-shrink-0 relative z-10">

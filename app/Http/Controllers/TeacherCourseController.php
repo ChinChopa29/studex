@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Group;
 use App\Models\Message;
 use App\Models\Student;
+use App\Models\Task;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,17 +16,29 @@ use Illuminate\Support\Facades\Log;
 class TeacherCourseController extends Controller
 {
     public function index() {
-        $teacher = Auth::user(); 
-        if ($teacher) {
-            $courses = $teacher->courses()->get(); 
+        $admin = Auth::guard('admin')->user();
+        $teacher = Auth::guard('teacher')->user();
+        $student = Auth::guard('student')->user();
+    
+        if ($admin) {
+            $courses = Course::all();
             return view('courses', compact('courses'));
-        } else {
-            return redirect()->route('login')->with('error', 'Преподаватель не найден.');
+        } elseif ($teacher) {
+            $courses = $teacher->courses()->get();
+            return view('courses', compact('courses'));
+        } elseif ($student) {
+            $courses = $student->courses()->get();
+            return view('courses', compact('courses'));
+        }
+    
+        return redirect()->route('login')->with('error', 'Пользователь не найден.');
     }
-    }
+    
+    
 
     public function show(Course $course) {
-        return view('show.course', compact('course'));
+        $teachers = Teacher::all();
+        return view('show.course', compact('course', 'teachers'));
     }
 
     public function inviteStudentsForm(Course $course) {
@@ -88,30 +101,66 @@ class TeacherCourseController extends Controller
             ->with('success', "Приглашения отправлены: $invitedCount. Пропущено: $skippedCount.");
     }
     
-    public function getGroupStudents(Request $request) {
-        if (!$request->group_id) {
-            return response()->json(['error' => 'Не передан ID группы'], 400);
+    public function getGroupStudents(Request $request, $course, $group_id) {
+        try {
+            $students = Student::whereHas('groups', function($query) use ($group_id) {
+                    $query->where('groups.id', $group_id);
+                })
+                ->leftJoin('student_course', function($join) use ($course) {
+                    $join->on('students.id', '=', 'student_course.student_id')
+                         ->where('student_course.course_id', $course);
+                })
+                ->select(
+                    'students.*',
+                    'student_course.status as course_status'
+                )
+                ->get();
+    
+            if ($students->isEmpty()) {
+                return '<div class="p-4 text-gray-400">В этой группе пока нет студентов.</div>';
+            }
+    
+            $html = '<div class="space-y-2">';
+            foreach ($students as $student) {
+                $status = 'Не приглашен';
+                $statusClass = 'bg-blue-500';
+                
+                if ($student->course_status) {
+                    switch ($student->course_status) {
+                        case 'accepted':
+                            $status = 'Принял';
+                            break;
+                        case 'pending':
+                            $status = 'Ожидает';
+                            break;
+                        case 'declined':
+                            $status = 'Отклонил';
+                            break;
+                    }
+                }
+                
+                $html .= '
+                <div class="flex items-center justify-between p-3 bg-gray-600 rounded-lg hover:bg-gray-500 transition-colors">
+                    <div>
+                        <span class="font-medium">'.$student->surname.' '.$student->name.' '.$student->lastname.'</span>
+                        <div class="text-xs text-gray-300 mt-1">'.$student->email.'</div>
+                    </div>
+                    <span class="text-xs text-white px-2 py-1 rounded-full '.$statusClass.'">'.$status.'</span>
+                </div>';
+            }
+            $html .= '</div>';
+    
+            return $html;
+        } catch (\Exception $e) {
+            Log::error('Error fetching group students: '.$e->getMessage());
+            return '<div class="bg-red-900/50 text-red-300 p-4 rounded-lg">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    Ошибка загрузки студентов
+                </div>';
         }
-    
-        $students = Student::whereHas('groups', function ($query) use ($request) {
-            $query->where('groups.id', $request->group_id);
-        })->get();
-    
-        if ($students->isEmpty()) {
-            return '<p class="text-gray-500">В этой группе пока нет студентов.</p>';
-        }
-    
-        $html = '<ul class="list-disc pl-5">';
-        foreach ($students as $student) {
-            $html .= "<li>{$student->surname} {$student->name} {$student->lastname}</li>";
-        }
-        $html .= '</ul>';
-    
-        return $html;
     }
 
     public function studentsShow(Course $course) {
-        Log::info('Course found: ', ['id' => $course->id]);
         $groups = Group::whereHas('students', function ($query) use ($course) {
             $query->whereHas('courses', function ($q) use ($course) {
                 $q->where('course_id', $course->id);

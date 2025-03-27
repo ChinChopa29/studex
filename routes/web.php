@@ -15,13 +15,10 @@ use App\Http\Controllers\TeacherCourseController;
 use App\Http\Controllers\UserController;
 use App\Models\Group;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('guest')->group(function () {
-   Route::get('/', [AuthController::class, 'login'])->name('login');
-});
+Route::get('/', [AuthController::class, 'login'])->name('login');
 
 Route::get('/search/{type}', [MailController::class, 'searchUsers'])->middleware('auth:admin,teacher,student');
-
-// Route::get('/{course}/students', [TeacherCourseController::class, 'studentsShow'])->name('CourseStudents');

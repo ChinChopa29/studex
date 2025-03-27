@@ -8,6 +8,7 @@ use App\Models\Student;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -212,13 +213,12 @@ class StudentController extends Controller
             'plain_password.min' => 'Пароль должен содержать минимум 5 символов',
         ]);
     
-        // Проверяем, был ли введен новый пароль
         if (!empty($validated['plain_password'])) {
-            $validated['password'] = Hash::make($validated['plain_password']); // Хешируем пароль
-            $student->plain_password = $validated['plain_password']; // Сохраняем plain_password
+            $validated['password'] = Hash::make($validated['plain_password']); 
+            $student->plain_password = $validated['plain_password']; 
         }
     
-        unset($validated['plain_password']); // Удаляем plain_password из массива перед обновлением
+        unset($validated['plain_password']); 
     
         $student->update($validated);
     
@@ -322,7 +322,7 @@ class StudentController extends Controller
 
         $students = $query->get();
 
-        $students = $students->sortBy(function ($student) {
+        $students = $students->sortByDesc(function ($student) {
             return $student->groups->first()->name ?? 'Без группы';
         });
 
@@ -350,12 +350,17 @@ class StudentController extends Controller
         foreach (range('A', 'D') as $columnID) {
             $sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
-
-        $writer = new Xlsx($spreadsheet);
+        ob_clean();
+        ob_end_flush();
+        
         $filePath = storage_path('students'. $groupName .'.xlsx');
+        $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
+        chmod($filePath, 0777);
+        
+        return response()->download($filePath)->deleteFileAfterSend();
+        
 
-        return Response::download($filePath)->deleteFileAfterSend();
     }
 
 

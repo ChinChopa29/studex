@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class TeacherTaskFile extends Model
 {
     protected $fillable = [
-        'task_id', 'teacher_id', 'file_path',
+        'task_id', 'teacher_id', 'file_path', 'original_name',
     ];
 
     public function task() {

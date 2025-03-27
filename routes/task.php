@@ -18,7 +18,16 @@ Route::middleware(['auth:admin,teacher,student'])->group(function () {
 
       Route::get('/{course}/tasks', [TaskController::class, 'index'])->name('CourseTasks');
       Route::get('/{course}/{task}', [TaskController::class, 'show'])->name('CourseTask');
+
+      Route::post('/{course}/{task}/upload', [TaskController::class, 'upload'])->name('CourseTaskUpload');
+
+      Route::get('/{course}/{task}/edit', [TaskController::class, 'edit'])->name('CourseTaskEdit');
+      Route::put('/{course}/{task}/update', [TaskController::class, 'update'])->name('CourseTaskUpdate');
+
+      Route::delete('/{course}/{task}/delete', [TaskController::class, 'destroy'])->name('CourseTaskDelete');
+
+      Route::get('/{course}/{task}/{student}', [TaskController::class, 'showStudentTask'])->name('CourseTaskShowStudent');
+      Route::post('/{course}/{task}/{student}/grade', [TaskController::class, 'gradeStudentTask'])->name('CourseTaskGradeStudent');
    });
 
 });
-

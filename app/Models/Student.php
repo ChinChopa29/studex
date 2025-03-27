@@ -23,9 +23,10 @@ class Student extends Authenticatable
         return $this->belongsToMany(Group::class, 'group_student');
     }
     
-    public function courses()
-    {
-        return $this->belongsToMany(Course::class, 'student_course')->withTimestamps();
+    public function courses() {
+        return $this->belongsToMany(Course::class, 'student_course')
+                    ->withPivot('status')
+                    ->withTimestamps();
     }
 
     public function educationProgram()
@@ -33,7 +34,9 @@ class Student extends Authenticatable
         return $this->belongsTo(EducationProgram::class, 'education_program_id');
     }
     
-    public function grades() {
+    public function grades() 
+    {
         return $this->hasMany(TaskGrade::class);
     }
+    
 }

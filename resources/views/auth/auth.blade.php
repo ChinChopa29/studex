@@ -20,10 +20,16 @@
                <span class="text-red-500">{{ $message }}</span>
             @enderror
 
-            <input type="password" class="text-black border-2 rounded-lg py-2 px-4" placeholder="Пароль" name="password" value="{{ old('password') }}">
-            @error('password')
-               <span class="text-red-500">{{ $message }}</span>
-            @enderror
+            <div class="relative w-full">
+               <input type="password" id="password" class="text-black border-2 rounded-lg py-2 px-4 w-full" placeholder="Пароль" name="password" value="{{ old('password') }}">
+               @error('password')
+                  <span class="text-red-500">{{ $message }}</span>
+               @enderror
+               <button type="button" onclick="togglePassword()"
+                     class="absolute inset-y-0 right-3 flex items-center">
+                     <i id="eyeIcon" class="fa fa-eye text-gray-500"></i>
+               </button>
+            </div>
 
             <button type="submit" class="bg-blue-500 text-white rounded-lg py-2 px-4 hover:bg-blue-600 transition-all duration-200">Войти</button>
             @error('login')
@@ -33,5 +39,6 @@
          </form>
       </div>
    </div>
+   <script src="{{ asset('js/toggle-pass.js') }}"></script>
 </body>
 </html>

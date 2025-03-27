@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 
-Route::middleware(['auth:admin,teacher'])->group(function () {
+Route::middleware(['auth:admin,teacher,student'])->group(function () {
 
    Route::prefix('course')->group(function () {
 
