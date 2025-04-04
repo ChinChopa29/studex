@@ -200,8 +200,30 @@
                         $studentFiles = $task->studentFiles->where('student_id', Auth::id());
                         $grade = $task->grades->where('student_id', Auth::id())->first();
                     @endphp
-                    
-                    @if($studentFiles->count() == 0)
+
+                    <!-- Если есть оценка - показываем её в любом случае -->
+                    @if($grade)
+                    <div class="bg-gray-700 p-4 rounded-lg mb-6">
+                        <h4 class="font-medium text-lg mb-2">Оценка</h4>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-2xl font-bold {{ $grade->grade >= 60 ? 'text-green-400' : 'text-yellow-400' }}">
+                                {{ $grade->grade }}/100
+                            </span>
+                            @if($grade->grade >= 90)
+                            <span class="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Отлично</span>
+                            @elseif($grade->grade >= 75)
+                            <span class="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full">Хорошо</span>
+                            @elseif($grade->grade >= 60)
+                            <span class="px-2 py-1 bg-yellow-900 text-yellow-300 text-xs rounded-full">Удовлетворительно</span>
+                            @else
+                            <span class="px-2 py-1 bg-red-900 text-red-300 text-xs rounded-full">Неудовлетворительно</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Форма загрузки файлов показывается ТОЛЬКО если нет файлов И нет оценки -->
+                    @if($studentFiles->count() == 0 && !$grade)
                     <form action="{{route('CourseTaskUpload', ['course' => $course->id, 'task' => $task->id])}}" method="post" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <h3 class="text-xl font-semibold mb-2">Отправить решение</h3>
@@ -222,7 +244,7 @@
                             <span>Отправить решение</span>
                         </button>
                     </form>
-                    @else
+                    @elseif($studentFiles->count() > 0)
                     <div>
                         <h3 class="text-xl font-semibold mb-4">Ваше решение</h3>
                         <div class="space-y-3 mb-6">
@@ -231,8 +253,8 @@
                                 <div class="flex items-center space-x-3">
                                     <i class="far fa-file text-blue-400"></i>
                                     <a href="{{ asset('storage/' . $file->file_path) }}" 
-                                       class="text-blue-400 hover:underline truncate max-w-xs"
-                                       download="{{ $file->original_name }}">
+                                    class="text-blue-400 hover:underline truncate max-w-xs"
+                                    download="{{ $file->original_name }}">
                                         {{ $file->original_name }}
                                     </a>
                                 </div>
@@ -241,39 +263,24 @@
                             @endforeach
                         </div>
                         
+                        @unless($grade)
                         <div class="bg-gray-700 p-4 rounded-lg">
-                            <h4 class="font-medium text-lg mb-2">Оценка</h4>
-                            @if($grade)
-                            <div class="flex items-center space-x-3">
-                                <span class="text-2xl font-bold {{ $grade->grade >= 60 ? 'text-green-400' : 'text-yellow-400' }}">
-                                    {{ $grade->grade }}/100
-                                </span>
-                                @if($grade->grade >= 90)
-                                <span class="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Отлично</span>
-                                @elseif($grade->grade >= 75)
-                                <span class="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full">Хорошо</span>
-                                @elseif($grade->grade >= 60)
-                                <span class="px-2 py-1 bg-yellow-900 text-yellow-300 text-xs rounded-full">Удовлетворительно</span>
-                                @else
-                                <span class="px-2 py-1 bg-red-900 text-red-300 text-xs rounded-full">Неудовлетворительно</span>
-                                @endif
-                            </div>
-                            @else
                             <div class="flex items-center space-x-2 text-yellow-400">
                                 <i class="fas fa-hourglass-half"></i>
                                 <span>Задание еще не оценено</span>
                             </div>
-                            @endif
                         </div>
+                        @endunless
                     </div>
                     @endif
                 </div>
                 @endif
+                </div>
             </div>
 
             <!-- Правая колонка - для преподавателей -->
             @if(Auth::guard('teacher')->check() && (!isset($editing) || !$editing))
-            <div class="w-full space-y-6">
+            <div class="w-full space-y-6 mt-6">
 
                 <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
                     <h3 class="text-xl font-bold mb-4 flex items-center">
@@ -367,8 +374,6 @@
                         @endforeach
                     </div>
                 </div>
-                
-                
             </div>
             @endif
         </div>

@@ -32,7 +32,7 @@
             @endforeach
          </select>
       
-         <select id="programSelect" class="text-black border-2 rounded-lg py-2 px-4 w-full md:w-1/3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+         <select id="programSelect" name="education_program_id" class="text-black border-2 rounded-lg py-2 px-4 w-full md:w-1/3 focus:outline-none focus:ring-2 focus:ring-blue-500">
                <option id="defaultProgramOption" value="">Сначала выберите степень</option>
          </select>
       

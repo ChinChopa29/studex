@@ -39,4 +39,8 @@ class Student extends Authenticatable
         return $this->hasMany(TaskGrade::class);
     }
     
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 }

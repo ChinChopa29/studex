@@ -56,6 +56,18 @@
          <label class="text-lg font-medium">Дата рождения</label>
          <input type="date" name="birthday" value="{{ old('birthday') }}" class="w-full md:w-1/3 bg-gray-200 text-black border-2 border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
+
+      <div class="flex flex-col">
+         <label class="text-lg font-medium">Фото преподавателя</label>
+         <label for="image" class="w-full md:w-1/3 bg-green-600 hover:bg-green-700 transition-all duration-200 rounded-lg py-2 px-4 text-lg font-medium shadow-md flex items-center justify-center gap-2 cursor-pointer mt-4">
+            <i class="fas fa-image"></i> Загрузить изображение
+         </label>
+         <input type="file" id="image" name="image" accept="image/*" onchange="previewImage(event)" class="hidden">
+         <div id="imagePreviewContainer" class="mt-2 hidden">
+            <img id="imagePreview" class="rounded-lg border-2 border-gray-300 w-32 h-32 object-cover">
+            <button type="button" onclick="clearImage()" class="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition cursor-pointer">Удалить</button>
+         </div>
+      </div>
       
       <div class="flex flex-col">
          <label class="text-lg font-medium">Корпоративная почта</label>
@@ -73,4 +85,5 @@
    </form>
 </div>
 @include('include.success-message')
+<script src="{{ asset('js/image-preview.js') }}"></script>
 @endsection

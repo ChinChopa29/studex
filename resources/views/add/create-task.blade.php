@@ -33,122 +33,232 @@
             </div>
         </div>
 
-        <!-- Форма создания задания -->
-        <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
-            <form action="{{route('teacherCourseStoreTask', ['course' => $course->id])}}" method="post" enctype="multipart/form-data" class="space-y-6">
-                @csrf
-                
-                <div>
-                    <label for="name" class="block mb-2 font-medium">Название задания</label>
-                    <input type="text" id="name" name="name" 
-                           class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           placeholder="Введите название задания">
-                </div>
-                
-                <div>
-                    <label for="description" class="block mb-2 font-medium">Описание</label>
-                    <textarea id="description" name="description" rows="4"
-                              class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder="Добавьте описание задания"></textarea>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Вкладки для выбора типа задания -->
+        <div class="mb-6 border-b border-gray-700">
+            <ul class="flex flex-wrap -mb-px" id="taskTypeTabs" data-tabs-toggle="#taskTypeContent">
+                <li class="mr-2">
+                    <button type="button" 
+                            class="inline-block p-4 border-b-2 rounded-t-lg active" 
+                            id="regular-task-tab" 
+                            data-tabs-target="#regular-task" 
+                            aria-current="page">
+                        Обычное задание
+                    </button>
+                </li>
+                <li class="mr-2">
+                    <button type="button" 
+                            class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-300 hover:border-gray-300" 
+                            id="attendance-task-tab" 
+                            data-tabs-target="#attendance-task">
+                        Посещаемость
+                    </button>
+                </li>
+                <li class="mr-2">
+                    <button type="button" 
+                            class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-300 hover:border-gray-300" 
+                            id="test-task-tab" 
+                            data-tabs-target="#test-task">
+                        Тест
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Контент вкладок -->
+        <div id="taskTypeContent">
+            <!-- Обычное задание -->
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg" id="regular-task" role="tabpanel" aria-labelledby="regular-task-tab">
+                <form action="{{route('teacherCourseStoreTask', ['course' => $course->id])}}" method="post" enctype="multipart/form-data" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="task_type" value="regular">
+                    
                     <div>
-                        <label for="from" class="block mb-2 font-medium">Дата начала</label>
-                        <input type="date" id="from" name="from" 
-                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <label for="milestone_id" class="block mb-2 font-medium">Выберите рубежный контроль</label>
+                        <select name="milestone_id" id="milestone_id" 
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @forelse ($milestones as $milestone)
+                                <option value="{{$milestone->id}}" 
+                                        data-from="{{$milestone->from}}" 
+                                        data-deadline="{{$milestone->deadline}}">
+                                    {{$milestone->name}}
+                                </option>
+                            @empty
+                                <option value="null">Вы еще не добавили рубежный контроль</option>
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <div id="milestoneDates" class="mt-2 text-sm text-gray-400">
+                        <p>Начало: <span id="milestoneFrom">—</span></p>
+                        <p>Дедлайн: <span id="milestoneDeadline">—</span></p>
+                    </div>
+
+                    <div>
+                        <label for="name" class="block mb-2 font-medium">Название задания</label>
+                        <input type="text" id="name" name="name" 
+                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Введите название задания" value="{{old('name')}}">
                     </div>
                     
                     <div>
-                        <label for="deadline" class="block mb-2 font-medium">Дедлайн</label>
-                        <input type="date" id="deadline" name="deadline" 
-                               class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <label for="description" class="block mb-2 font-medium">Описание</label>
+                        <textarea id="description" name="description" rows="4"
+                                  class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Добавьте описание задания">{{old('description')}}</textarea>
                     </div>
-                </div>
-
-                <div>
-                    <label class="block mb-2 font-medium">Прикрепить файлы</label>
-                    <div class="flex items-center space-x-4">
-                        <label for="fileInput" class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg border border-gray-600 transition-colors duration-200 flex items-center space-x-2">
-                            <i class="fas fa-paperclip"></i>
-                            <span>Выберите файлы</span>
-                        </label>
-                        <input type="file" id="fileInput" name="files[]" multiple class="hidden">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="from" class="block mb-2 font-medium">Дата начала</label>
+                            <input type="date" id="from" name="from" 
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="{{old('from')}}">
+                        </div>
+                        
+                        <div>
+                            <label for="deadline" class="block mb-2 font-medium">Дедлайн</label>
+                            <input type="date" id="deadline" name="deadline" 
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="{{old('deadline')}}">
+                        </div>
                     </div>
-                    <ul id="fileList" class="mt-3 space-y-2"></ul>
-                </div>
 
-                <div class="flex justify-end space-x-4 pt-4">
-                    <a href="{{ route('CourseTasks', ['course' => $course->id]) }}" 
-                       class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors duration-200">
-                        Отмена
-                    </a>
-                    <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
-                        <i class="fas fa-plus"></i>
-                        <span>Создать задание</span>
-                    </button>
-                </div>
-            </form>
+                    <div>
+                        <label class="block mb-2 font-medium">Прикрепить файлы</label>
+                        <div class="flex items-center space-x-4">
+                            <label for="fileInput" class="cursor-pointer bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg border border-gray-600 transition-colors duration-200 flex items-center space-x-2">
+                                <i class="fas fa-paperclip"></i>
+                                <span>Выберите файлы</span>
+                            </label>
+                            <input type="file" id="fileInput" name="files[]" multiple class="hidden">
+                        </div>
+                        <ul id="fileList" class="mt-3 space-y-2"></ul>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <a href="{{ route('CourseTasks', ['course' => $course->id]) }}" 
+                           class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors duration-200">
+                            Отмена
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Создать задание</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Посещаемость -->
+            <div class="hidden bg-gray-800 rounded-xl p-6 shadow-lg" id="attendance-task" role="tabpanel" aria-labelledby="attendance-task-tab">
+                <form action="{{route('teacherCourseStoreTask', ['course' => $course->id])}}" method="post" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="task_type" value="attendance">
+                    
+                    <div>
+                        <label for="milestone_id_attendance" class="block mb-2 font-medium">Выберите рубежный контроль</label>
+                        <select name="milestone_id" id="milestone_id_attendance" 
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            @forelse ($milestones as $milestone)
+                                <option value="{{$milestone->id}}" 
+                                        data-from="{{$milestone->from}}" 
+                                        data-deadline="{{$milestone->deadline}}">
+                                    {{$milestone->name}}
+                                </option>
+                            @empty
+                                <option value="null">Вы еще не добавили рубежный контроль</option>
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <div id="milestoneDate" class="mt-2 text-sm text-gray-400">
+                        <p>Начало: <span id="milestoneFromAttendance">—</span></p>
+                        <p>Дедлайн: <span id="milestoneDeadlineAttendance">—</span></p>
+                    </div>
+
+                    <div>
+                        <label for="name" class="block mb-2 font-medium">Номер посещаемости</label>
+                        <input type="text" id="name" name="name" 
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Введите номер посещаемости" value="{{old('attendance_number')}}">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="from" class="block mb-2 font-medium">Дата начала</label>
+                            <input type="date" id="from" name="from" 
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="{{old('from')}}">
+                        </div>
+                        
+                        <div>
+                            <label for="deadline" class="block mb-2 font-medium">Дедлайн</label>
+                            <input type="date" id="deadline" name="deadline" 
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="{{old('deadline')}}">
+                        </div>
+                    </div>
+
+
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <a href="{{ route('CourseTasks', ['course' => $course->id]) }}" 
+                           class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors duration-200">
+                            Отмена
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Создать посещаемость</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Тест -->
+            <div class="hidden bg-gray-800 rounded-xl p-6 shadow-lg" id="test-task" role="tabpanel" aria-labelledby="test-task-tab">
+                <form action="{{route('teacherCourseStoreTask', ['course' => $course->id])}}" method="post" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="task_type" value="test">
+                    
+                    <div>
+                        <label for="milestone_id_test" class="block mb-2 font-medium">Выберите рубежный контроль</label>
+                        <select name="milestone_id" id="milestone_id_test" 
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            @forelse ($milestones as $milestone)
+                                <option value="{{$milestone->id}}" 
+                                        data-from="{{$milestone->from}}" 
+                                        data-deadline="{{$milestone->deadline}}">
+                                    {{$milestone->name}}
+                                </option>
+                            @empty
+                                <option value="null">Вы еще не добавили рубежный контроль</option>
+                            @endforelse
+                        </select>
+                    </div>
+
+                    <div id="milestoneDatesT" class="mt-2 text-sm text-gray-400">
+                        <p>Начало: <span id="milestoneFromTest">—</span></p>
+                        <p>Дедлайн: <span id="milestoneDeadlineTest">—</span></p>
+                    </div>
+
+                    <!-- Здесь будет форма для создания теста -->
+                    <div class="text-center py-8 text-gray-400">
+                        <p>Форма для создания теста будет здесь</p>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <a href="{{ route('CourseTasks', ['course' => $course->id]) }}" 
+                           class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors duration-200">
+                            Отмена
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Создать тест</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            
         </div>
     </div>
 </div>
 @endif
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const fileInput = document.getElementById('fileInput');
-    const fileList = document.getElementById('fileList');
-    let selectedFiles = [];
-
-    fileInput.addEventListener('change', function(event) {
-        selectedFiles = [...selectedFiles, ...Array.from(event.target.files)];
-        updateFileList();
-    });
-
-    function updateFileList() {
-        fileList.innerHTML = '';
-        
-        const dataTransfer = new DataTransfer();
-        
-        selectedFiles.forEach((file, index) => {
-            dataTransfer.items.add(file);
-            
-            const li = document.createElement('li');
-            li.classList.add(
-                'flex', 'items-center', 'justify-between', 
-                'bg-gray-700', 'p-3', 'rounded-lg', 'shadow'
-            );
-
-            const fileInfo = document.createElement('div');
-            fileInfo.classList.add('flex', 'items-center', 'space-x-3');
-            
-            const icon = document.createElement('i');
-            icon.classList.add('far', 'fa-file', 'text-blue-400');
-            
-            const fileName = document.createElement('span');
-            fileName.textContent = file.name;
-            fileName.classList.add('truncate', 'max-w-xs');
-            
-            fileInfo.appendChild(icon);
-            fileInfo.appendChild(fileName);
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '<i class="fas fa-trash text-red-500 hover:text-red-400"></i>';
-            removeBtn.onclick = function() {
-                selectedFiles.splice(index, 1);
-                updateFileList();
-            };
-
-            li.appendChild(fileInfo);
-            li.appendChild(removeBtn);
-            fileList.appendChild(li);
-        });
-
-        fileInput.files = dataTransfer.files;
-    }
-});
-</script>
-
+<script src="{{asset('js/add-task.js')}}"></script>
 @include('include.success-message')
 @include('include.error-message')
 @endsection

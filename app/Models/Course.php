@@ -29,4 +29,14 @@ class Course extends Model
     {
         return $this->belongsToMany(Group::class, 'group_course');
     }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    public function milestones()
+    {
+        return $this->hasMany(Milestone::class);
+    }
 }

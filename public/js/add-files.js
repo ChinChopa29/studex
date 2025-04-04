@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedFiles = [];
 
     newFileInput.addEventListener("change", function (event) {
-        // Добавляем новые файлы к уже выбранным
         selectedFiles = [...selectedFiles, ...Array.from(event.target.files)];
         updateFileList();
     });
@@ -12,14 +11,11 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateFileList() {
         newFileList.innerHTML = "";
         
-        // Создаем новый DataTransfer для обновления input.files
         const dataTransfer = new DataTransfer();
         
         selectedFiles.forEach((file, index) => {
-            // Добавляем файл в DataTransfer
             dataTransfer.items.add(file);
             
-            // Создаем элемент списка
             const li = document.createElement("li");
             li.classList.add(
                 "flex",
@@ -48,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function () {
             newFileList.appendChild(li);
         });
 
-        // Обновляем files в input элементе
         newFileInput.files = dataTransfer.files;
     }
 });

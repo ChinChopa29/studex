@@ -82,7 +82,7 @@ class MailController extends Controller
     
         $message->forceDelete();
     
-        return redirect()->route('studentCoursesIndex')->with('success', 'Вы успешно записались на курс.');
+        return redirect()->route('CoursesIndex')->with('success', 'Вы успешно записались на курс.');
     }
     
 
@@ -98,7 +98,7 @@ class MailController extends Controller
     
         $message->delete();
     
-        return redirect()->route('studentCoursesIndex')->with('success', 'Вы отказались от записи на курс.');
+        return redirect()->route('CoursesIndex')->with('success', 'Вы отказались от записи на курс.');
     }
 
     public function searchUsers(Request $request, $type) {

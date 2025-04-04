@@ -51,11 +51,16 @@ class StudentController extends Controller
         fgetcsv($handle, 1000, $delimiter);
     
         $educationProgramId = (int) $request->input('education_program_id');
-        $educationProgram = EducationProgram::find($educationProgramId);
-    
+
         if (!$educationProgramId) {
             return redirect()->back()->with('error', 'Выберите образовательную программу')->with(compact('educationPrograms'));
         }
+
+        $educationProgram = EducationProgram::find($educationProgramId);
+        if (!$educationProgram) {
+            return redirect()->back()->with('error', 'Выбранная образовательная программа не найдена')->with(compact('educationPrograms'));
+        }
+
     
         $studentIds = [];
         $admissionYear = null;

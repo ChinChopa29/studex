@@ -50,4 +50,24 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Course::class, 'student_course');
     }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isTeacher()
+    {
+        return $this->role === 'teacher';
+    }
+
+    public function isStudent()
+    {
+        return $this->role === 'student';
+    }
+
+    public function group_id()
+    {
+        return $this->belongsTo(Group::class);
+    }
 }
