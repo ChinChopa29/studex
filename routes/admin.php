@@ -1,15 +1,11 @@
 <?php
 
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\CoursController;
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EducationProgramController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
-use App\Http\Controllers\UserController;
-use App\Models\Group;
-use App\Models\Student;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['is_admin'])->prefix('admin')->group(function () {
@@ -47,7 +43,7 @@ Route::middleware(['is_admin'])->prefix('admin')->group(function () {
       Route::put('/{group}/update', [GroupController::class, 'update'])->name('admin.updateGroup');
 
       // Удаление студента из группы
-      Route::delete('/{group}/detach-student/{student}', [GroupController::class, 'detachUser'])->name('admin.detachUser');
+      Route::delete('/{group}/detach-student/{student}', [GroupController::class, 'detachStudent'])->name('admin.detachStudent');
 
       // Удаление преподавателя из группы
       Route::delete('/{group}/detach-teacher/{teacher}', [GroupController::class, 'detachTeacher'])->name('admin.detachTeacher');
@@ -57,33 +53,30 @@ Route::middleware(['is_admin'])->prefix('admin')->group(function () {
    });
 
    // Поиск курсов
-   Route::get('course/search', [CoursController::class, 'search'])->name('admin.searchCourse');
+   Route::get('course/search', [CourseController::class, 'search'])->name('admin.searchCourse');
 
    // Акроним для курсов
-   Route::get('/courses/search-code', [CoursController::class, 'searchCode']);
+   Route::get('/courses/search-code', [CourseController::class, 'searchCode']);
 
    // Курсы
    Route::prefix('courses')->group(function () {
       // Создание курса
-      Route::get('/create', [CoursController::class, 'create'])->name('admin.createCourse');
-      Route::post('/store', [CoursController::class, 'store'])->name('admin.storeCourse');
+      Route::get('/create', [CourseController::class, 'create'])->name('admin.createCourse');
+      Route::post('/store', [CourseController::class, 'store'])->name('admin.storeCourse');
       
       // Отображение курсов
-      Route::get('/', [CoursController::class, 'index'])->name('admin.showCourses');
-      Route::get('/{course}', [CoursController::class, 'show'])->name('admin.showCourse');
+      Route::get('/', [CourseController::class, 'index'])->name('admin.showCourses');
+      Route::get('/{course}', [CourseController::class, 'show'])->name('admin.showCourse');
 
       // Редактирование курса
-      Route::get('/{course}/edit', [CoursController::class, 'edit'])->name('admin.editCourse');
-      Route::put('/{course}/update', [CoursController::class, 'update'])->name('admin.updateCourse');
-
-      // // Удаление студента из группы
-      // Route::delete('/{group}/{student}/delete', [GroupController::class, 'detach'])->name('admin.detachUser');
+      Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('admin.editCourse');
+      Route::put('/{course}/update', [CourseController::class, 'update'])->name('admin.updateCourse');
 
       // Удаление курса
-      Route::delete('/{course}/delete', [CoursController::class, 'destroy'])->name('admin.destroyCourse');
+      Route::delete('/{course}/delete', [CourseController::class, 'destroy'])->name('admin.destroyCourse');
 
       // Удаление преподавателя из курса
-      Route::delete('/{course}/detach-teacher/{teacher}', [CoursController::class, 'detachTeacherCourse'])->name('admin.detachTeacherCourse');
+      Route::delete('/{course}/detach-teacher/{teacher}', [CourseController::class, 'detachTeacherCourse'])->name('admin.detachTeacherCourse');
    });
 
    // Поиск программ

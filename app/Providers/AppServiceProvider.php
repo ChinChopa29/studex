@@ -12,22 +12,11 @@ use Illuminate\Support\Facades\Auth;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void {
         View::composer('*', function ($view) {
             $user = null;
             $userType = null;
-            $unreadMessagesCount = 0; // ✅ Объявляем заранее, чтобы избежать ошибки
+            $unreadMessagesCount = 0; 
     
             if (Auth::guard('student')->check()) {
                 $user = Auth::guard('student')->user();
@@ -51,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
                 $unreadMessagesCount = Message::where('receiver_id', $user->id)
                     ->where('receiver_type', $receiverType)
                     ->where('status', 0)
-                    ->count(); // ✅ Считаем количество вместо get()
+                    ->count(); 
             }
     
             $view->with('unreadMessagesCount', $unreadMessagesCount);
@@ -61,5 +50,12 @@ class AppServiceProvider extends ServiceProvider
             ->name('admin.')
             ->group(base_path('routes/admin.php'));
         }
+
+    // public function register()
+    // {
+    //     $this->app->singleton(CourseService::class, function ($app) {
+    //         return new CourseService();
+    //     });
+    // }
 
 }

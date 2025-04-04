@@ -1,7 +1,11 @@
 @extends('layout.layout')
 
-@section('title') 
-Сообщение от {{ $message->sender->surname }} {{ $message->sender->name }} {{ $message->sender->lastname }}
+@section('title')
+    @if ($message->sender)
+        Сообщение от {{ $message->sender->surname }} {{ $message->sender->name }} {{ $message->sender->lastname }}
+    @else
+        Сообщение
+    @endif
 @endsection
 
 @section('content')

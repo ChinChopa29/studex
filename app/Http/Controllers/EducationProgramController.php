@@ -2,140 +2,72 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EducationProgramRequest;
 use App\Models\EducationProgram;
+use App\Services\EducationProgramService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class EducationProgramController extends Controller
 {
-    public function create() {
-        return view('admin.add.add-program');
+    protected const PAGINATION_PER_PAGE = 10;
+
+    protected $educationProgramService;
+
+    public function __construct(EducationProgramService $educationProgramService)
+    {
+        $this->educationProgramService = $educationProgramService;
     }
 
-    public function store(Request $request) {
-        try {
-            $validated = $request->validate([
-                'title' => 'required|min:5|max:150',
-                'acronym' => 'nullable',
-                'description' => 'required|min:50|max:3000',
-                'degree' => 'required|in:Бакалавриат,Магистратура,Аспирантура',
-                'duration' => [
-                    'required',
-                    function ($attribute, $value, $fail) use ($request) {
-                        $validDurations = [
-                            'Бакалавриат' => [3, 4],
-                            'Магистратура' => [1, 2],
-                            'Аспирантура' => [3, 4, 5]
-                        ];
-                        $degree = $request->degree;
-                        if (isset($validDurations[$degree]) && !in_array($value, $validDurations[$degree])) {
-                            $fail("Недопустимая длительность для выбранной степени.");
-                        } elseif (!isset($validDurations[$degree])) {
-                            $fail("Некорректная степень обучения.");
-                        }
-                    }
-                ],
-                'mode' => 'required|in:Очная,Очно-заочная,Дистанционная',
-                'price' => 'required|numeric|min:0',
-            ]);
-            
-            EducationProgram::create($validated);
-            
-            return redirect()->back()->with('success', 'Образовательная программа успешно создана');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Произошла ошибка. Пожалуйста, попробуйте снова.'])->withInput();
-        }
-    }
-
-    public function index() {
-        $educationPrograms = EducationProgram::paginate(10);
+    public function index(): View
+    {
+        $educationPrograms = EducationProgram::paginate(self::PAGINATION_PER_PAGE);
         return view('admin.education-programs', compact('educationPrograms'));
     }
 
-    public function show(EducationProgram $educationProgram) {
+    public function show(EducationProgram $educationProgram): View
+    {
         return view('admin.show.education-program', compact('educationProgram'));
     }
 
-    public function edit(EducationProgram $educationProgram) {
+    public function create() : View
+    {
+        return view('admin.add.add-program');
+    }
+
+    public function store(EducationProgramRequest $request): RedirectResponse 
+    {
+        $this->educationProgramService->createEducationProgram($request->validated());
+        return redirect()->back()->with('success', 'Образовательная программа успешно создана');
+    }
+
+    public function edit(EducationProgram $educationProgram): View
+    {
         $editing = true;
         return view('admin.show.education-program', compact('educationProgram', 'editing'));
     }
 
-    public function update(EducationProgram $educationProgram, Request $request) {
-        try {
-            $validated = $request->validate([
-                'title' => 'required|min:5|max:150',
-                'acronym' => 'nullable',
-                'description' => 'required|min:50|max:3000',
-                'degree' => 'required|in:Бакалавриат,Магистратура,Аспирантура',
-                'duration' => [
-                    'required',
-                    function ($attribute, $value, $fail) use ($request) {
-                        $validDurations = [
-                            'Бакалавриат' => [3, 4],
-                            'Магистратура' => [1, 2],
-                            'Аспирантура' => [3, 4, 5]
-                        ];
-                        $degree = $request->degree;
-                        if (isset($validDurations[$degree]) && !in_array($value, $validDurations[$degree])) {
-                            $fail("Недопустимая длительность для выбранной степени.");
-                        } elseif (!isset($validDurations[$degree])) {
-                            $fail("Некорректная степень обучения.");
-                        }
-                    }
-                ],
-                'mode' => 'required|in:Очная,Очно-заочная,Дистанционная',
-                'price' => 'required|numeric|min:0',
-            ]);
-            
-            $educationProgram->update($validated);
-    
-            return redirect()->route('admin.showProgram', $educationProgram->id)
-                             ->with('success', 'Образовательная программа успешно обновлена');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->validator)->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Произошла ошибка. Пожалуйста, попробуйте снова.'])->withInput();
-        }
-    }
-
-    public function destroy(EducationProgram $educationProgram) {
-        $educationProgram->delete();
-        return redirect()->route('admin.education-programs')->with('success', 'Образовательная программа успешно удалена');
-    }
-    
-    public function search(Request $request)
+    public function update(EducationProgram $educationProgram, EducationProgramRequest $request): RedirectResponse
     {
-        $query = $request->get('search');  
-        $degree = $request->get('degree'); 
-        $mode = $request->get('mode'); 
-        $duration = $request->get('duration'); 
+        $this->educationProgramService->updateEducationProgram($educationProgram, $request->validated());
+        return redirect()
+            ->route('admin.showProgram', $educationProgram->id)
+            ->with('success', 'Образовательная программа успешно обновлена');
+    }
 
-        $educationPrograms = EducationProgram::query();
-
-        if ($query) {
-            $educationPrograms->where(function ($q) use ($query) {
-                $q->where('title', 'LIKE', "%$query%")
-                ->orWhere('degree', 'LIKE', "%$query%")
-                ->orWhere('mode', 'LIKE', "%$query%")
-                ->orWhere('duration', 'LIKE', "%$query%");
-            });
-        }
-
-        if ($degree) {
-            $educationPrograms->where('degree', $degree);
-        }
-        if ($mode) {
-            $educationPrograms->where('mode', $mode);
-        }
-        if ($duration) {
-            $educationPrograms->where('duration', $duration);
-        }
-
-        $educationPrograms = $educationPrograms->paginate(10)->appends(request()->query());
-
+    public function destroy(EducationProgram $educationProgram): RedirectResponse
+    {
+        $this->educationProgramService->deleteEducationProgram($educationProgram);
+        return redirect()
+            ->route('admin.showPrograms')
+            ->with('success', 'Образовательная программа успешно удалена');
+    }
+    
+    public function search(Request $request): View
+    {
+        $filters = $request->only(['search', 'degree', 'mode', 'duration']);
+        $educationPrograms = $this->educationProgramService->searchEducationProgram($filters);
         return view('admin.education-programs', compact('educationPrograms'));
     }
 

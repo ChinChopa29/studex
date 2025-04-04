@@ -18,19 +18,26 @@
 
 @if($user) 
    <div class="bg-slate-800 text-white m-4 p-6 rounded-2xl shadow-lg">
-      @if ($courses->isNotEmpty())
+      @php
+         $visibleCourses = $courses;
+
+         if ($user instanceof \App\Models\Student) {
+             $visibleCourses = $courses->filter(function ($course) use ($user) {
+                 return $user->courses->where('pivot.status', 'accepted')->contains($course);
+             });
+         }
+      @endphp
+
+      @if ($visibleCourses->isNotEmpty())
          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach ($courses as $course)
-               @if($user instanceof \App\Models\Student ? $user->courses->contains($course) : true)
-                  <a href="{{route('CourseShow', ['course' => $course->id])}}" 
-                     class="relative bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-2xl shadow-lg transition-transform transform hover:scale-105 cursor-pointer">
-                        <h2 class="text-xl font-bold mb-2">{{ $course->name }}</h2>
-                        
-                        <button class="absolute top-4 right-4 text-white hover:text-gray-200 transition">
-                           <i class="fas fa-cog text-xl"></i>
-                        </button>
-                  </a>
-               @endif
+            @foreach ($visibleCourses as $course)
+               <a href="{{ route('CourseShow', ['course' => $course->id]) }}" 
+                  class="relative bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-2xl shadow-lg transition-transform transform hover:scale-105 cursor-pointer">
+                  <h2 class="text-xl font-bold mb-2">{{ $course->name }}</h2>
+                  <button class="absolute top-4 right-4 text-white hover:text-gray-200 transition">
+                     <i class="fas fa-cog text-xl"></i>
+                  </button>
+               </a>
             @endforeach
          </div>
       @else
@@ -38,5 +45,6 @@
       @endif
    </div>
 @endif
+
 
 @endsection

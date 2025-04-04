@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Course;
-use App\Models\Message;
-use App\Models\Student;
-use App\Models\Task;
-use App\Models\Teacher;
-use App\Models\User;
-use Illuminate\Http\Request;
+use App\Http\Requests\AuthenticateRequest;
+use App\Services\AuthService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function login() {
         if (Auth::guard('admin')->check()) {
             return redirect()->route('admin.index');
@@ -32,50 +31,17 @@ class AuthController extends Controller
         return view('auth.auth');
     }
 
-    public function authenticate()
+    public function authenticate(AuthenticateRequest $request)
     {
-        $validated = request()->validate([
-            'email' => 'required|min:3|max:50',
-            'password' => 'required|min:5',
-        ]);
+        $validated = $request->validated();
 
-
-        if ($admin = User::where('email', $validated['email'])->first()) {
-            if (Hash::check($validated['password'], $admin->password)) {
-                auth()->guard('admin')->login($admin);
-                request()->session()->regenerate();
-                return redirect()->route('admin.index');
-            }
-        }
-
-        if ($teacher = Teacher::where('email', $validated['email'])->first()) {
-            if (Hash::check($validated['password'], $teacher->password)) {
-                auth()->guard('teacher')->login($teacher);
-                request()->session()->regenerate();
-                $messages = Message::all();
-                return redirect()->route('CoursesIndex', compact('messages'));    
-            }
-        }
-
-        if ($student = Student::where('email', $validated['email'])->first()) {
-            if (Hash::check($validated['password'], $student->password)) {
-                auth()->guard('student')->login($student);
-                request()->session()->regenerate();
-                $messages = Message::all();
-                return redirect()->route('CoursesIndex', compact('messages'));
-            }
-        }
-
-        return redirect()->route('login')->withErrors([
-            'login' => 'Неверная почта или пароль'
-        ]);
+        return $this->authService->authenticateAndGetRedirect($validated['email'], $validated['password']);
     }
 
 
-    public function logout() {
-        Auth::logout();
-        session()->invalidate(); 
-        session()->regenerateToken();  
+    public function logout()
+    {
+        $this->authService->logout();
 
         return redirect()->route('login');
     }

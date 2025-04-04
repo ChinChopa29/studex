@@ -41,12 +41,17 @@
             <label for="teacher" class="text-lg font-medium">Преподаватель курса</label>
             <select id="teacher" name="teacher"
                 class="w-full md:w-1/3 bg-gray-200 text-black border-2 border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @foreach($teachers as $teacher)
-                    <option value="{{ $teacher->id }}" 
-                        @if(isset($course->teachers) && $course->teachers->contains('id', $teacher->id)) selected @endif>
-                        {{ $teacher->surname }} {{ $teacher->name }} {{ $teacher->lastname }}
-                    </option>
-                @endforeach
+                @foreach ($teachers as $teacher)
+                  <option value="{{ $teacher->id }}" 
+                        @if (in_array($teacher->id, $course->teachers->pluck('id')->toArray())) 
+                           disabled 
+                        @endif
+                        @if ($teacher->id == old('teacher', optional($course->teachers->first())->id)) 
+                           selected 
+                        @endif>
+                        {{ $teacher->name }} {{ $teacher->surname }}
+                  </option>
+               @endforeach
             </select>
         </div>
          

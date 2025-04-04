@@ -59,20 +59,33 @@ class TeacherCourseController extends Controller
         $skippedCount = 0;
     
         foreach ($group->students as $student) { 
-            $alreadyInvited = DB::table('student_course')
-                ->where('student_id', $student->id)
-                ->where('course_id', $course->id)
-                ->exists();
-    
             $alreadyEnrolled = DB::table('student_course')
                 ->where('student_id', $student->id)
                 ->where('course_id', $course->id)
                 ->where('status', 'accepted')
                 ->exists();
     
-            if ($alreadyInvited || $alreadyEnrolled) {
+            if ($alreadyEnrolled) {
                 $skippedCount++;
                 continue; 
+            }
+    
+            // Удаляем declined, если есть
+            DB::table('student_course')
+                ->where('student_id', $student->id)
+                ->where('course_id', $course->id)
+                ->where('status', 'declined')
+                ->delete();
+    
+            // Проверяем, есть ли еще другая (не declined) запись, чтобы не дублировать
+            $alreadyInvited = DB::table('student_course')
+                ->where('student_id', $student->id)
+                ->where('course_id', $course->id)
+                ->exists();
+    
+            if ($alreadyInvited) {
+                $skippedCount++;
+                continue;
             }
     
             DB::table('student_course')->insert([
@@ -100,6 +113,7 @@ class TeacherCourseController extends Controller
         return redirect()->route('teacherCourseInviteForm', ['course' => $course->id])
             ->with('success', "Приглашения отправлены: $invitedCount. Пропущено: $skippedCount.");
     }
+    
     
     public function getGroupStudents(Request $request, $course, $group_id) {
         try {

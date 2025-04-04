@@ -2,47 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LessonMaterial;
-use App\Models\Schedule;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\StoreLessonMaterialRequest;
+use App\Services\LessonMaterialService;
+use Illuminate\Http\RedirectResponse;
+
 
 class LessonMaterialController extends Controller
 {
-    public function store(Request $request, $courseId, $lessonId)
+    protected $lessonMaterialService;
+
+    public function __construct(LessonMaterialService $lessonMaterialService)
     {
-        $request->validate([
-            'file' => 'required|file|max:10240', // Макс 10MB
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string'
-        ]);
+        $this->lessonMaterialService = $lessonMaterialService;
+    }
 
-        $storagePath = "materials/{$lessonId}";
-        Storage::makeDirectory($storagePath);
-
-        $file = $request->file('file');
-        $path = $file->store($storagePath, 'public'); 
-
-        LessonMaterial::create([
-            'lesson_id' => $lessonId,
-            'name' => $request->name,
-            'path' => $path, 
-            'description' => $request->description
-        ]);
-
+    public function store(StoreLessonMaterialRequest $request, $courseId, $lessonId): RedirectResponse
+    {
+        $request->validated();
+        $this->lessonMaterialService->createLessonMaterial($request, $lessonId);
         return back()->with('success', 'Материал успешно добавлен');
     }
 
-    public function destroy($courseId, $lessonId, $materialId)
+    public function destroy($courseId, $lessonId, $materialId): RedirectResponse
     {
-        $material = LessonMaterial::findOrFail($materialId);
-        
-        if (Storage::disk('public')->exists($material->path)) {
-            Storage::disk('public')->delete($material->path);
-        }
-        
-        $material->delete();
-
+        $this->lessonMaterialService->deleteLessonMaterial($materialId);
         return back()->with('success', 'Материал удален');
     }
 }
