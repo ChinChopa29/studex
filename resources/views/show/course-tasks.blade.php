@@ -32,14 +32,10 @@
                
                @if(Auth::guard('teacher')->check())
                <div class="flex items-center gap-4">
-                    <a href="{{ route('teacherCourseCreateMilestone', ['course' => $course->id]) }}" 
-                        class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200">
-                        <i class="fas fa-plus mr-2"></i> Добавить рубежный контроль
-                    </a>
                     <a href="{{ route('teacherCourseCreateTask', ['course' => $course->id]) }}" 
                         class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200">
                         <i class="fas fa-plus mr-2"></i> Добавить задание
-                    </a>    
+                    </a>
                 </div>
                 @endif
            </div>
@@ -87,30 +83,52 @@
                         : $tasks->where('milestone_id', $selectedMilestone)
                                 ->where('from', '<=', now())
                                 ->where('deadline', '>', now());
+                    
+                    $availableTests = $selectedMilestone == 'all' 
+                        ? $testTasks->where('from', '<=', now())->where('deadline', '>', now())
+                        : $testTasks->where('milestone_id', $selectedMilestone)
+                                ->where('from', '<=', now())
+                                ->where('deadline', '>', now());
+                    
+                    $availableItems = $availableTasks->merge($availableTests)->sortBy('deadline');
                 @endphp
                 
-                @if ($availableTasks->isNotEmpty())
+                @if ($availableItems->isNotEmpty())
                     <div class="grid grid-cols-1 gap-4">
-                        @foreach ($availableTasks as $task)
+                        @foreach ($availableItems as $item)
                             @php
-                                $totalTime = \Carbon\Carbon::parse($task->deadline)->diffInSeconds($task->from);
-                                $remainingTime = \Carbon\Carbon::parse($task->deadline)->diffInSeconds(now());
+                                $isTest = $item instanceof \App\Models\TestTask;
+                                $totalTime = \Carbon\Carbon::parse($item->deadline)->diffInSeconds($item->from);
+                                $remainingTime = \Carbon\Carbon::parse($item->deadline)->diffInSeconds(now());
                                 $progress = 100 - ($remainingTime / $totalTime * 100);
                                 $progress = max(0, min($progress, 100));
                                 
-                                $submission = $task->studentFiles->where('student_id', Auth::id())->first();
-                                $grade = $task->grades->where('student_id', Auth::id())->first();
+                                if(Auth::guard('student')->check()) {
+                                    if($isTest) {
+                                        $submission = $item->testResults->where('student_id', Auth::id())->first();
+                                        $grade = $submission ? $submission->score : null;
+                                    } else {
+                                        $submission = $item->studentFiles->where('student_id', Auth::id())->first();
+                                        $commentSubmission = $item->comments->where('student_id', Auth::id())->first();
+                                        $grade = $item->grades->where('student_id', Auth::id())->first();
+                                    }
+                                }
                             @endphp
                             
-                            <a href="{{ route('CourseTask', ['course' => $course->id, 'task' => $task->id]) }}" class="group">
-                                <div class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition-colors duration-200 shadow-lg">
+                            <a href="{{ $isTest ? route('CourseTestTask', ['course' => $course->id, 'testTask' => $item->id]) : route('CourseTask', ['course' => $course->id, 'task' => $item->id]) }}" class="group">
+                                <div class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition-colors duration-200 shadow-lg border-l-4 {{ $isTest ? 'border-green-500' : 'border-blue-500' }}">
                                     <div class="flex justify-between items-start">
                                         <div>
-                                            <h3 class="text-xl font-semibold group-hover:text-blue-400 transition-colors duration-200">
-                                                {{ $loop->iteration }}. {{ $task->name }}
-                                            </h3>
+                                            <div class="flex items-center">
+                                                <h3 class="text-xl font-semibold group-hover:text-blue-400 transition-colors duration-200">
+                                                    {{ $loop->iteration }}. {{ $item->name }}
+                                                </h3>
+                                                @if($isTest)
+                                                    <span class="ml-2 text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded-full">Тест</span>
+                                                @endif
+                                            </div>
                                             <p class="text-gray-400 mt-1">
-                                                Доступно до: {{ \Carbon\Carbon::parse($task->deadline)->translatedFormat('j F Y года') }}
+                                                Доступно до: {{ \Carbon\Carbon::parse($item->deadline)->translatedFormat('j F Y года') }}
                                             </p>
                                         </div>
                                         <span class="text-sm bg-blue-900 text-blue-300 px-3 py-1 rounded-full">
@@ -127,12 +145,12 @@
 
                                     @if(Auth::guard('student')->check())
                                     <div class="mt-4 pt-3 border-t border-gray-700">
-                                        @if($grade) 
+                                        @if($grade !== null) 
                                             <div class="flex items-center text-green-400">
                                                 <i class="fas fa-check-circle mr-2"></i>
-                                                <span>Ваша оценка: {{ $grade->grade }}/100</span>
+                                                <span>Ваша оценка: {{ $isTest ? $grade : optional($grade)->grade }}/100</span>
                                             </div>
-                                        @elseif($submission)  
+                                        @elseif($submission || ($item instanceof \App\Models\Task && $commentSubmission))  
                                             <div class="flex items-center text-yellow-400">
                                                 <i class="fas fa-hourglass-half mr-2"></i>
                                                 <span>Ожидание проверки</span>
@@ -140,7 +158,7 @@
                                         @else  
                                             <div class="flex items-center text-red-400">
                                                 <i class="fas fa-exclamation-circle mr-2"></i>
-                                                <span>Вы еще не сдали это задание</span>
+                                                <span>Вы еще не сдали это {{ $isTest ? 'тест' : 'задание' }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -165,20 +183,36 @@
                         ? $tasks->where('from', '>', now())
                         : $tasks->where('milestone_id', $selectedMilestone)
                                 ->where('from', '>', now());
+                    
+                    $upcomingTests = $selectedMilestone == 'all' 
+                        ? $testTasks->where('from', '>', now())
+                        : $testTasks->where('milestone_id', $selectedMilestone)
+                                ->where('from', '>', now());
+                    
+                    $upcomingItems = $upcomingTasks->merge($upcomingTests)->sortBy('from');
                 @endphp
                 
-                @if ($upcomingTasks->isNotEmpty())
+                @if ($upcomingItems->isNotEmpty())
                     <div class="grid grid-cols-1 gap-4">
-                        @foreach ($upcomingTasks as $task)
-                            <a href="{{ route('CourseTask', ['course' => $course->id, 'task' => $task->id]) }}" class="group">
-                                <div class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition-colors duration-200 shadow-lg">
+                        @foreach ($upcomingItems as $item)
+                            @php
+                                $isTest = $item instanceof \App\Models\TestTask;
+                            @endphp
+                            
+                            <a href="{{ $isTest ? route('CourseTestTask', ['course' => $course->id, 'testTask' => $item->id]) : route('CourseTask', ['course' => $course->id, 'task' => $item->id]) }}" class="group">
+                                <div class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition-colors duration-200 shadow-lg border-l-4 {{ $isTest ? 'border-green-500' : 'border-blue-500' }}">
                                     <div class="flex justify-between items-start">
                                         <div>
-                                            <h3 class="text-xl font-semibold group-hover:text-yellow-400 transition-colors duration-200">
-                                                {{ $loop->iteration }}. {{ $task->name }}
-                                            </h3>
+                                            <div class="flex items-center">
+                                                <h3 class="text-xl font-semibold group-hover:text-yellow-400 transition-colors duration-200">
+                                                    {{ $loop->iteration }}. {{ $item->name }}
+                                                </h3>
+                                                @if($isTest)
+                                                    <span class="ml-2 text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded-full">Тест</span>
+                                                @endif
+                                            </div>
                                             <p class="text-gray-400 mt-1">
-                                                Откроется: {{ \Carbon\Carbon::parse($task->from)->translatedFormat('j F Y года') }}
+                                                Откроется: {{ \Carbon\Carbon::parse($item->from)->translatedFormat('j F Y года') }}
                                             </p>
                                         </div>
                                         <span class="text-sm bg-yellow-900 text-yellow-300 px-3 py-1 rounded-full">
@@ -189,7 +223,7 @@
                                     @if(Auth::guard('student')->check())
                                     <div class="mt-4 pt-3 border-t border-gray-700 text-gray-400">
                                         <i class="fas fa-lock mr-2"></i>
-                                        <span>Задание еще не доступно</span>
+                                        <span>{{ $isTest ? 'Тест' : 'Задание' }} еще не доступно</span>
                                     </div>
                                     @endif
                                 </div>
@@ -212,25 +246,46 @@
                         ? $tasks->where('deadline', '<', now())
                         : $tasks->where('milestone_id', $selectedMilestone)
                                 ->where('deadline', '<', now());
+                    
+                    $completedTests = $selectedMilestone == 'all' 
+                        ? $testTasks->where('deadline', '<', now())
+                        : $testTasks->where('milestone_id', $selectedMilestone)
+                                ->where('deadline', '<', now());
+                    
+                    $completedItems = $completedTasks->merge($completedTests)->sortByDesc('deadline');
                 @endphp
                 
-                @if ($completedTasks->isNotEmpty())
+                @if ($completedItems->isNotEmpty())
                     <div class="grid grid-cols-1 gap-4">
-                        @foreach ($completedTasks as $task)
+                        @foreach ($completedItems as $item)
                             @php
-                                $submission = $task->studentFiles->where('student_id', Auth::id())->first();
-                                $grade = $task->grades->where('student_id', Auth::id())->first();
+                                $isTest = $item instanceof \App\Models\TestTask;
+                                
+                                if(Auth::guard('student')->check()) {
+                                    if($isTest) {
+                                        $submission = $item->testResults->where('student_id', Auth::id())->first();
+                                        $grade = $submission ? $submission->score : null;
+                                    } else {
+                                        $submission = $item->studentFiles->where('student_id', Auth::id())->first();
+                                        $grade = $item->grades->where('student_id', Auth::id())->first();
+                                    }
+                                }
                             @endphp
                             
-                            <a href="{{ route('CourseTask', ['course' => $course->id, 'task' => $task->id]) }}" class="group">
-                                <div class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition-colors duration-200 shadow-lg">
+                            <a href="{{ $isTest ? route('CourseTestTask', ['course' => $course->id, 'testTask' => $item->id]) : route('CourseTask', ['course' => $course->id, 'task' => $item->id]) }}" class="group">
+                                <div class="bg-gray-800 p-5 rounded-xl hover:bg-gray-700 transition-colors duration-200 shadow-lg border-l-4 {{ $isTest ? 'border-green-500' : 'border-blue-500' }}">
                                     <div class="flex justify-between items-start">
                                         <div>
-                                            <h3 class="text-xl font-semibold group-hover:text-red-400 transition-colors duration-200">
-                                                {{ $loop->iteration }}. {{ $task->name }}
-                                            </h3>
+                                            <div class="flex items-center">
+                                                <h3 class="text-xl font-semibold group-hover:text-red-400 transition-colors duration-200">
+                                                    {{ $loop->iteration }}. {{ $item->name }}
+                                                </h3>
+                                                @if($isTest)
+                                                    <span class="ml-2 text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded-full">Тест</span>
+                                                @endif
+                                            </div>
                                             <p class="text-gray-400 mt-1">
-                                                Завершено: {{ \Carbon\Carbon::parse($task->deadline)->translatedFormat('j F Y года') }}
+                                                Завершено: {{ \Carbon\Carbon::parse($item->deadline)->translatedFormat('j F Y года') }}
                                             </p>
                                         </div>
                                         <span class="text-sm bg-red-900 text-red-300 px-3 py-1 rounded-full">
@@ -241,10 +296,10 @@
                                     @if(Auth::guard('student')->check())
                                     <div class="mt-4 pt-3 border-t border-gray-700">
                                         @if($submission)
-                                            @if($grade)
-                                                <div class="flex items-center {{ $grade->grade >= 60 ? 'text-green-400' : 'text-red-400' }}">
+                                            @if($grade !== null)
+                                                <div class="flex items-center {{ $grade >= 60 ? 'text-green-400' : 'text-red-400' }}">
                                                     <i class="fas fa-check-circle mr-2"></i>
-                                                    <span>Ваша оценка: {{ $grade->grade }}/100</span>
+                                                    <span>Ваша оценка: {{ $isTest ? $grade : optional($grade)->grade }}/100</span>
                                                 </div>
                                             @else
                                                 <div class="flex items-center text-yellow-400">
@@ -255,7 +310,7 @@
                                         @else
                                             <div class="flex items-center text-red-400">
                                                 <i class="fas fa-times-circle mr-2"></i>
-                                                <span>Вы не сдали это задание</span>
+                                                <span>Вы не сдали это {{ $isTest ? 'тест' : 'задание' }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -276,61 +331,7 @@
     </div>
 </div>
 @endif
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Обработка табов статуса заданий
-        const tabs = document.querySelectorAll(".tab-btn");
-        const contents = document.querySelectorAll(".tab-content");
-        
-        // Функция для переключения табов
-        function switchTab(tabElement) {
-            // Сбрасываем активное состояние у всех табов
-            tabs.forEach(t => {
-                t.classList.remove("border-blue-500", "text-white");
-                t.classList.add("text-gray-400", "border-transparent");
-            });
-            
-            // Скрываем все содержимое табов
-            contents.forEach(c => c.classList.add("hidden"));
-            
-            // Активируем выбранный таб
-            tabElement.classList.remove("text-gray-400", "border-transparent");
-            tabElement.classList.add("border-blue-500", "text-white");
-            
-            // Показываем соответствующее содержимое
-            const tabId = tabElement.getAttribute("data-tab");
-            document.getElementById(tabId).classList.remove("hidden");
-            
-            // Обновляем сообщения "Нет заданий"
-            updateEmptyStateMessages();
-        }
-        
-        // Функция для обновления сообщений "Нет заданий"
-        function updateEmptyStateMessages() {
-            const activeTab = document.querySelector('.tab-content:not(.hidden)');
-            if (!activeTab) return;
-            
-            const hasVisibleTasks = activeTab.querySelector('a[href*="/tasks/"]') !== null;
-            const emptyMessage = activeTab.querySelector('.empty-state-message');
-            
-            if (emptyMessage) {
-                emptyMessage.style.display = hasVisibleTasks ? 'none' : 'block';
-            }
-        }
-        
-        // Назначаем обработчики событий для табов
-        tabs.forEach(tab => {
-            tab.addEventListener("click", function() {
-                switchTab(this);
-            });
-        });
-        
-        // Активируем первый таб по умолчанию
-        switchTab(tabs[0]);
-    });
-</script>
-
+<script src="{{asset('js/tasks-tabs.js')}}"> </script>
 @include('include.success-message')
 @include('include.error-message') 
 @endsection

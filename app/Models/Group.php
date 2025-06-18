@@ -32,4 +32,8 @@ class Group extends Model
         return $this->belongsToMany(Teacher::class, 'teacher_group');
     }
 
+    public function subgroups()
+    {
+        return $this->hasMany(Group::class, 'subgroup');
+    }
 }

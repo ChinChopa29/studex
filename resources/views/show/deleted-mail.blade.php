@@ -69,7 +69,6 @@
           </ul>
       </div>
       @endif
-
    </div>
 @endif
 @include('include.success-message')

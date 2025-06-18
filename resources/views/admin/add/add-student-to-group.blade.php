@@ -23,7 +23,7 @@
                   <a href="{{ route('admin.showUser', ['student' => $student->id]) }}" class="text-gray-300 hover:text-gray-400">
                      {{ $student->name }} {{ $student->surname }} {{ $student->lastname }}
                   </a>
-                  <form action="{{ route('admin.detachUser', ['group' => $group->id, 'student' => $student->id]) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите исключить студента {{$student->name}} {{$student->surname}} {{$student->lastname}} из группы {{$group->name}}?');">
+                  <form action="{{ route('admin.detachStudent', ['group' => $group->id, 'student' => $student->id]) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите исключить студента {{$student->name}} {{$student->surname}} {{$student->lastname}} из группы {{$group->name}}?');">
                      @csrf
                      @method('DELETE')
                      <button type="submit">

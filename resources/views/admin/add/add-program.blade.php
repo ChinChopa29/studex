@@ -89,7 +89,6 @@
    @endif
 </div>
 
-{{-- Скрипт для подсказок и зависимости длительности обучения от степени --}}
 <script src="{{asset('js/add-program.js')}}"></script>
 <script src="{{asset('js/alert-pop-up.js')}}"></script>
 @include('include.success-message')

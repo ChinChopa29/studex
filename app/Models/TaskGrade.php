@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class TaskGrade extends Model
 {
     protected $fillable = [
-        'task_id', 'student_id', 'grade',
+        'task_id', 'student_id', 'grade', 'comment',
     ];
 
-    public function task() {
+    public function task() 
+    {
         return $this->belongsTo(Task::class);
     }
 
-    public function student() {
+    public function student() 
+    {
         return $this->belongsTo(Student::class);
     }
 }

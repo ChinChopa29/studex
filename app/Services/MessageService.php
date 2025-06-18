@@ -83,7 +83,8 @@ class MessageService
       return $message->load('files');
    }
 
-   public function showDeletedMessages() {
+   public function showDeletedMessages() 
+   {
       $user = Auth::user();
     
       $messages = Message::where(function ($query) use ($user) {
@@ -345,5 +346,4 @@ class MessageService
             });
       });
    }
-
 }

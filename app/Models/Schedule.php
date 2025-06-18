@@ -10,24 +10,14 @@ class Schedule extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title',
-        'description',
-        'type',
-        'date',
-        'start_time',
-        'end_time',
-        'classroom', 
-        'recurrence',
-        'recurrence_end_date',
-        'course_id',
-        'teacher_id',
-        'group_id',
-        'milestone_id'
+        'title', 'description', 'type', 'date', 'start_time', 'end_time', 'classroom_id',  'recurrence', 'recurrence_end_date', 'course_id', 'teacher_id', 'group_id', 'milestone_id','task_id',
     ];
 
     protected $casts = [
         'date' => 'date',
-        'recurrence_end_date' => 'date'
+        'recurrence_end_date' => 'date',
+        'start_time' => 'datetime:H:i',
+        'end_time' => 'datetime:H:i',
     ];
 
     public function course()
@@ -91,5 +81,10 @@ class Schedule extends Model
     public function attendances()
     {
         return $this->hasMany(Attendance::class, 'lesson_id');
+    }
+
+    public function classroom()
+    {
+        return $this->belongsTo(Classroom::class);
     }
 }

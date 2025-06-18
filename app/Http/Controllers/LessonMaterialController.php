@@ -6,7 +6,6 @@ use App\Http\Requests\StoreLessonMaterialRequest;
 use App\Services\LessonMaterialService;
 use Illuminate\Http\RedirectResponse;
 
-
 class LessonMaterialController extends Controller
 {
     protected $lessonMaterialService;

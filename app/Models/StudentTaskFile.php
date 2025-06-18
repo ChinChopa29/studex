@@ -7,14 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class StudentTaskFile extends Model
 {
     protected $fillable = [
-        'task_id', 'student_id', 'file_path', 'original_name',
+        'task_id', 'student_id', 'file_path', 'original_name', 'comment',
     ];
 
-    public function task() {
+    public function task() 
+    {
         return $this->belongsTo(Task::class);
     }
 
-    public function student() {
+    public function student() 
+    {
         return $this->belongsTo(Student::class);
     }
 }

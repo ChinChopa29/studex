@@ -3,19 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Course extends Model
 {
 
     protected $fillable = [
-        'name', 'code', 'description', 'credits', 'semester', 'type', 'degree',
+        'name', 'code', 'description', 'credits', 'semester', 'type', 'degree', 'hours',
     ];
 
-    public function teachers() {
+    public function teachers() 
+    {
         return $this->belongsToMany(Teacher::class, 'teacher_course');
     }
 
-    public function educationPrograms() {
+    public function educationPrograms() 
+    {
         return $this->belongsToMany(EducationProgram::class, 'course_education_program');
     }
 
@@ -38,5 +41,20 @@ class Course extends Model
     public function milestones()
     {
         return $this->hasMany(Milestone::class);
+    }
+
+    public function schedules() 
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
+    public function testTasks()
+    {
+        return $this->hasMany(TestTask::class);
+    }
+
+    public function style()
+    {
+        return $this->hasOne(CourseStyle::class)->where('student_id', Auth::id());
     }
 }

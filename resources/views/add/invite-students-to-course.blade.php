@@ -1,5 +1,6 @@
 @php
-   $user = Auth::guard('admin')->user() ?? Auth::guard('teacher')->user() ?? Auth::guard('student')->user();
+    $user = Auth::guard('admin')->user() ?? Auth::guard('teacher')->user() ?? Auth::guard('student')->user();
+    $filteredGroups = $groups->filter(fn($group) => empty($group->subgroup));
 @endphp
 
 @extends('layout.layout')
@@ -46,7 +47,7 @@
                         <select name="groupId" id="groupSelect" 
                                 class="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="">Выберите группу</option>
-                            @forelse ($groups as $group)
+                            @forelse($filteredGroups as $group)
                                 @if($course->educationPrograms->contains('id', $group->education_program_id))
                                     <option value="{{ $group->id }}">{{ $group->name }}</option>
                                 @endif

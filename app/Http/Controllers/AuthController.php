@@ -15,7 +15,8 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
-    public function login() {
+    public function login() 
+    {
         if (Auth::guard('admin')->check()) {
             return redirect()->route('admin.index');
         }
@@ -38,12 +39,10 @@ class AuthController extends Controller
         return $this->authService->authenticateAndGetRedirect($validated['email'], $validated['password']);
     }
 
-
     public function logout()
     {
         $this->authService->logout();
 
         return redirect()->route('login');
     }
-
 }

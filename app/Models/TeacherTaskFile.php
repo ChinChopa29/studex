@@ -10,11 +10,13 @@ class TeacherTaskFile extends Model
         'task_id', 'teacher_id', 'file_path', 'original_name',
     ];
 
-    public function task() {
+    public function task() 
+    {
         return $this->belongsTo(Task::class);
     }
 
-    public function teacher() {
+    public function teacher() 
+    {
         return $this->belongsTo(Teacher::class);
     }
 }

@@ -7,13 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class EducationProgram extends Model
 {
     protected $fillable = [
-        'title',
-        'acronym',
-        'description',
-        'duration',
-        'degree',
-        'price',
-        'mode',
+        'title', 'acronym', 'description', 'duration', 'degree', 'price', 'mode',
     ];
     public function groups()
     {
@@ -27,6 +21,11 @@ class EducationProgram extends Model
 
     public function courses() {
         return $this->belongsToMany(Course::class, 'course_education_program');
+    }
+
+    public function classrooms()
+    {
+        return $this->belongsToMany(Classroom::class, 'education_program_classroom');
     }
 
 }

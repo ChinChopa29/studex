@@ -20,8 +20,7 @@
                 <span class="text-gray-500">/</span>
                 <a href="{{ route('CourseSchedule', ['course' => $course->id]) }}" class="text-blue-400 hover:text-blue-300">Расписание</a>
                 <span class="text-gray-500">/</span>
-                <a href="{{ route('CourseScheduleShowLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" class="text-blue-400 hover:text-blue-300">Расписание</a>
-                <span class="text-gray-500">/</span>
+                <span class="text-gray-500">Посещаемость</span>
             </div>
         </div>
 
@@ -33,8 +32,14 @@
                 </a>
                 <h1 class="text-3xl font-bold">Посещаемость занятия: {{$lesson->title}} <span class="text-gray-400"></span></h1>
             </div>
+
+            <!-- Поиск студентов -->
+            <div class="mb-6">
+                <input type="text" id="studentSearch" placeholder="Поиск студентов..." 
+                       class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
              
-             <form action="{{ route('CourseScheduleUpdateAttendance', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="POST">
+             <form action="{{ route('CourseScheduleUpdateAttendance', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="POST" id="attendanceForm">
                  @csrf
                  <input type="hidden" name="group_id" value="{{ $lesson->group_id }}">
                  
@@ -46,42 +51,46 @@
                          <div>Статус</div>
                      </div>
                      
-                     @foreach($lesson->group->students as $student)
-                        <input type="hidden" name="attendances[{{ $student->id }}][student_id]" value="{{ $student->id }}">
-                        @php
-                           $attendance = $lesson->attendances->firstWhere('student_id', $student->id);
-                        @endphp
-                        <div class="grid grid-cols-4 gap-4 items-center py-3 border-b border-gray-700">
-                           <div>{{ $student->surname }} {{ $student->name }} {{ $student->lastname }}</div>
-                           
-                           <div>
-                              <select name="attendances[{{ $student->id }}][status]" 
-                                       class="bg-gray-700 rounded px-3 py-2 w-full">
-                                    <option value="present" {{ ($attendance->status ?? 'present') === 'present' ? 'selected' : '' }}>
-                                       Присутствовал
-                                    </option>
-                                    <option value="absent" {{ ($attendance->status ?? null) === 'absent' ? 'selected' : '' }}>
-                                       Отсутствовал
-                                    </option>
-                                    <option value="late" {{ ($attendance->status ?? null) === 'late' ? 'selected' : '' }}>
-                                       Опоздал
-                                    </option>
-                              </select>
-                           </div>
-                           
-                           <div>
-                              <input type="text" 
-                                       name="attendances[{{ $student->id }}][comment]"
-                                       value="{{ $attendance->comment ?? '' }}"
-                                       class="bg-gray-700 rounded px-3 py-2 w-full">
-                           </div>
-                           
-                           <div>
-                              <input type="hidden" name="attendances[{{ $student->id }}][student_id]" value="{{ $student->id }}">
-                              {{ $attendance ? $attendance->statusName() : 'Еще не отмечен' }}
-                           </div>
-                        </div>
-                        @endforeach
+                     <div id="studentsContainer">
+                         @foreach($lesson->group->students as $student)
+                            <div class="student-row" data-name="{{ strtolower($student->surname.' '.$student->name.' '.$student->lastname) }}">
+                                <input type="hidden" name="attendances[{{ $student->id }}][student_id]" value="{{ $student->id }}">
+                                @php
+                                   $attendance = $lesson->attendances->firstWhere('student_id', $student->id);
+                                @endphp
+                                <div class="grid grid-cols-4 gap-4 items-center py-3 border-b border-gray-700">
+                                   <div>{{ $student->surname }} {{ $student->name }} {{ $student->lastname }}</div>
+                                   
+                                   <div>
+                                      <select name="attendances[{{ $student->id }}][status]" 
+                                               class="bg-gray-700 rounded px-3 py-2 w-full">
+                                            <option value="present" {{ ($attendance->status ?? 'present') === 'present' ? 'selected' : '' }}>
+                                               Присутствовал
+                                            </option>
+                                            <option value="absent" {{ ($attendance->status ?? null) === 'absent' ? 'selected' : '' }}>
+                                               Отсутствовал
+                                            </option>
+                                            <option value="late" {{ ($attendance->status ?? null) === 'late' ? 'selected' : '' }}>
+                                               Опоздал
+                                            </option>
+                                      </select>
+                                   </div>
+                                   
+                                   <div>
+                                      <input type="text" 
+                                               name="attendances[{{ $student->id }}][comment]"
+                                               value="{{ $attendance->comment ?? '' }}"
+                                               class="bg-gray-700 rounded px-3 py-2 w-full">
+                                   </div>
+                                   
+                                   <div>
+                                      <input type="hidden" name="attendances[{{ $student->id }}][student_id]" value="{{ $student->id }}">
+                                      {{ $attendance ? $attendance->statusName() : 'Еще не отмечен' }}
+                                   </div>
+                                </div>
+                            </div>
+                         @endforeach
+                     </div>
                      
                      <div class="mt-6 flex justify-end">
                          <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-md">
@@ -92,10 +101,10 @@
              </form>
          </div>
      </div>
-
     </div>
 </div>
 @endif
 @include('include.success-message')
 @include('include.error-message') 
+<script src="{{asset('js/seacrh-course-student.js')}}"></script>
 @endsection

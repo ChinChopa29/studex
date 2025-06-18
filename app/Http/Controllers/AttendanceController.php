@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateAttendanceRequest;
-use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Services\AttendanceService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AttendanceController extends Controller
@@ -36,5 +34,4 @@ class AttendanceController extends Controller
             ->route('CourseScheduleShowLesson', ['course' => $course->id, 'lesson' => $lesson->id])
             ->with('success', 'Посещаемость успешно обновлена');
     }
-
 }

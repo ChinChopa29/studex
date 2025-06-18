@@ -18,14 +18,12 @@
                 <span class="text-gray-500">/</span>
                 <a href="{{ route('CourseShow', ['course' => $course->id]) }}" class="text-blue-400 hover:text-blue-300">{{$course->name}}</a>
                 <span class="text-gray-500">/</span>
-                <a href="{{ route('CourseTasks', ['course' => $course->id]) }}" class="text-blue-400 hover:text-blue-300">Задания</a>
-                <span class="text-gray-500">/</span>
-                <span class="text-gray-400">Добавление рубежного контроля</span>
+                <span class="text-gray-400">Управление рубежными контролями</span>
             </div>
             
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <a href="{{ route('CourseTasks', ['course' => $course->id])}}" class="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200">
+                    <a href="{{ route('CourseShow', ['course' => $course->id])}}" class="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200">
                         <i class="fas fa-arrow-left text-lg"></i>
                     </a>
                     <h1 class="text-3xl font-bold">Новый рубежный контроль</h1>
@@ -40,7 +38,7 @@
 
                 <div>
                     <label for="milestone_number" class="block mb-2 font-medium">Номер рубежного контроля</label>
-                    <input type="number" id="milestone_number" name="milestone_number" 
+                    <input type="number" min="0" id="milestone_number" name="milestone_number" 
                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                            placeholder="Введите номер рубежного контроля" value="{{old('name')}}">
                 </div>
@@ -71,63 +69,88 @@
                 </div>
             </form>
         </div>
+
+        <div class="bg-gray-800 rounded-2xl p-6 shadow-2xl mt-6 text-white">
+            <h1 class="font-bold text-2xl mb-4">📋 Список рубежных контролей курса</h1>
+        
+            @forelse ($milestones as $milestone)
+                <div class="bg-gray-700 rounded-xl p-4 mb-4 shadow hover:shadow-xl transition-all duration-300" id="milestone-card-{{ $milestone->id }}">
+                    <div class="flex items-center justify-between gap-4" id="milestone-view-{{ $milestone->id }}">
+                        <div>
+                            <h2 class="text-lg font-semibold">{{ $milestone->name }}</h2>
+                            <p class="text-sm text-gray-300">
+                                📅 Дата начала: {{ $milestone->from->format('d.m.Y') }} &nbsp;&nbsp;—&nbsp;&nbsp;
+                                🕓 Дата окончания: {{ $milestone->deadline->format('d.m.Y') }}
+                            </p>
+                        </div> 
+                        <div class="flex items-center gap-4 text-lg">
+                            <button onclick="toggleEdit({{ $milestone->id }})" class="text-blue-400 hover:text-blue-600 transition" title="Редактировать">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form method="POST" action="{{ route('teacherCourseDestroyMilestone', ['course' => $course->id, 'milestone' => $milestone->id]) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Удалить">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+        
+                    <form method="POST" 
+                        action="{{ route('teacherCourseUpdateMilestone', ['course' => $course, 'milestone' => $milestone]) }}" 
+                        class="mt-4 hidden" id="milestone-form-{{ $milestone->id }}">
+                        @csrf
+                        @method('PUT')
+        
+                        <div class="flex flex-col md:flex-row gap-4 mb-4">
+                            <div class="flex-1">
+                                <label class="block text-sm mb-1 text-gray-300">Дата начала:</label>
+                                <input type="date" name="from" value="{{ $milestone->from->format('Y-m-d') }}" 
+                                       class="w-full rounded px-3 py-2 text-black">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm mb-1 text-gray-300">Дата окончания:</label>
+                                <input type="date" name="deadline" value="{{ $milestone->deadline->format('Y-m-d') }}" 
+                                       class="w-full rounded px-3 py-2 text-black">
+                            </div>
+                        </div>
+        
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="toggleEdit({{ $milestone->id }})"
+                                    class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-xl text-sm">
+                                Отмена
+                            </button>
+                            <button type="submit"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm">
+                                💾 Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            @empty
+                <div class="text-gray-400 text-center py-6">
+                    Пока что нет рубежных контролей для этого курса.
+                </div>
+            @endforelse
+        </div>
     </div>
 </div>
 @endif
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const fileInput = document.getElementById('fileInput');
-    const fileList = document.getElementById('fileList');
-    let selectedFiles = [];
+    function toggleEdit(id) {
+        const view = document.getElementById(`milestone-view-${id}`);
+        const form = document.getElementById(`milestone-form-${id}`);
 
-    fileInput.addEventListener('change', function(event) {
-        selectedFiles = [...selectedFiles, ...Array.from(event.target.files)];
-        updateFileList();
-    });
-
-    function updateFileList() {
-        fileList.innerHTML = '';
-        
-        const dataTransfer = new DataTransfer();
-        
-        selectedFiles.forEach((file, index) => {
-            dataTransfer.items.add(file);
-            
-            const li = document.createElement('li');
-            li.classList.add(
-                'flex', 'items-center', 'justify-between', 
-                'bg-gray-700', 'p-3', 'rounded-lg', 'shadow'
-            );
-
-            const fileInfo = document.createElement('div');
-            fileInfo.classList.add('flex', 'items-center', 'space-x-3');
-            
-            const icon = document.createElement('i');
-            icon.classList.add('far', 'fa-file', 'text-blue-400');
-            
-            const fileName = document.createElement('span');
-            fileName.textContent = file.name;
-            fileName.classList.add('truncate', 'max-w-xs');
-            
-            fileInfo.appendChild(icon);
-            fileInfo.appendChild(fileName);
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '<i class="fas fa-trash text-red-500 hover:text-red-400"></i>';
-            removeBtn.onclick = function() {
-                selectedFiles.splice(index, 1);
-                updateFileList();
-            };
-
-            li.appendChild(fileInfo);
-            li.appendChild(removeBtn);
-            fileList.appendChild(li);
-        });
-
-        fileInput.files = dataTransfer.files;
+        if (form.classList.contains('hidden')) {
+            form.classList.remove('hidden');
+            view.classList.add('hidden');
+        } else {
+            form.classList.add('hidden');
+            view.classList.remove('hidden');
+        }
     }
-});
 </script>
 
 @include('include.success-message')

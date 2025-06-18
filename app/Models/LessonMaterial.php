@@ -12,6 +12,6 @@ class LessonMaterial extends Model
 
     public function lesson()
     {
-        return $this->belongsTo(Schedule::class, 'lesson_id'); // Явно указываем ключ
+        return $this->belongsTo(Schedule::class, 'lesson_id'); 
     }
 }

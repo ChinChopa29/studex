@@ -121,6 +121,18 @@
                                  </select>
                             </div>
                         </div>
+            
+                        <!-- Прикрепленное задание (только для неповторяющихся событий) -->
+                        <div id="taskAssignmentContainer" class="hidden">
+                            <label for="task_id" class="block mb-2 font-medium">Прикрепить задание</label>
+                            <select id="task_id" name="task_id"
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Не прикреплять задание</option>
+                                @foreach($course->tasks as $task)
+                                    <option value="{{ $task->id }}">{{ $task->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
@@ -144,6 +156,28 @@
                     </button>
                 </div>
             </form>
+            
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const recurrenceSelect = document.getElementById('recurrence');
+                const taskAssignmentContainer = document.getElementById('taskAssignmentContainer');
+                const recurrenceEndContainer = document.getElementById('recurrenceEndContainer');
+            
+                function toggleContainers() {
+                    if (recurrenceSelect.value === 'none') {
+                        taskAssignmentContainer.classList.remove('hidden');
+                        recurrenceEndContainer.classList.add('hidden');
+                    } else {
+                        taskAssignmentContainer.classList.add('hidden');
+                        recurrenceEndContainer.classList.remove('hidden');
+                    }
+                }
+            
+                toggleContainers();
+            
+                recurrenceSelect.addEventListener('change', toggleContainers);
+            });
+            </script>
         </div>
     </div>
 </div>

@@ -2,87 +2,50 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreScheduleRequest;
+use App\Http\Requests\UpdateScheduleRequest;
 use App\Models\Course;
 use App\Models\Group;
 use App\Models\Milestone;
 use App\Models\Schedule;
+use App\Services\ScheduleGeneratorService;
+use App\Services\ScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class ScheduleController extends Controller
 {
-    public function index(Course $course)
+    protected $scheduleService;
+
+    public function __construct(ScheduleService $scheduleService)
     {
-        $startOfWeek = now()->startOfWeek()->format('Y-m-d');
-        $endOfWeek = now()->endOfWeek()->format('Y-m-d');
-
-        $groupIds = auth()->guard('student')->check()
-            ? Auth::user()->groups()->pluck('groups.id')
-            : [];
-
-        $lessons = Schedule::where('course_id', $course->id)
-            ->when(auth()->guard('student')->check(), function($query) use ($groupIds) {
-                $query->whereIn('group_id', $groupIds);
-            })
-            ->where(function($query) use ($startOfWeek, $endOfWeek) {
-                $query->where(function($q) use ($startOfWeek, $endOfWeek) {
-                    $q->whereNull('recurrence')
-                    ->orWhere('recurrence', 'none');
-                })
-                ->whereBetween('date', [$startOfWeek, $endOfWeek]);
-                
-                $query->orWhere(function($q) use ($startOfWeek, $endOfWeek) {
-                    $q->whereNotNull('recurrence')
-                    ->where('recurrence', '!=', 'none')
-                    ->where('date', '<=', $endOfWeek)
-                    ->where('recurrence_end_date', '>=', $startOfWeek);
-                });
-            })
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get()
-            ->groupBy([
-                'date',
-                function ($item) {
-                    return Carbon::parse($item->start_time)->format('H:i') . '-' . 
-                        Carbon::parse($item->end_time)->format('H:i');
-                }
-            ]);
-
-        $currentWeekDates = [];
-        $tempDate = now()->startOfWeek(); 
-        
-        for ($i = 0; $i < 6; $i++) {
-            $currentWeekDates[$i] = $tempDate->copy()->addDays($i)->format('Y-m-d');
-        }
-
-        return view('show.schedule', [
-            'course' => $course,
-            'lessons' => $lessons,
-            'currentWeekDates' => $currentWeekDates,
-            'currentWeekStart' => $startOfWeek,
-            'currentWeekEnd' => $endOfWeek
-        ]);
+        $this->scheduleService = $scheduleService;
     }
 
-    public function show(Course $course, Schedule $lesson) {
+    public function index(Course $course): View
+    {
+        $data = $this->scheduleService->getScheduleData($course);
+        return view('show.schedule', $data);
+    }
+
+    public function show(Course $course, Schedule $lesson): View
+    {
         return view('show.schedule-lesson', compact('course', 'lesson'));
     }
 
+    public function edit(Course $course, Schedule $lesson): View
+    {
+        $editing = true;
+        $groups = Group::all(); 
+        $tasks = $course->tasks; 
+        return view('show.schedule-lesson', compact('course', 'lesson', 'editing', 'groups', 'tasks'));
+    }
 
     public function create(Course $course)
     {
-        $groups = Group::whereHas('students', function ($query) use ($course) {
-            $query->whereHas('courses', function ($q) use ($course) {
-                $q->where('course_id', $course->id);
-            });
-        })->with(['students' => function ($query) use ($course) {
-            $query->with(['courses' => function ($q) use ($course) {
-                $q->where('course_id', $course->id)->select('student_id', 'status');
-            }]);
-        }])->get();
+        $groups = $this->scheduleService->getGroupsForSchedule($course);
 
         return view('add.create-lesson', [
             'course' => $course,
@@ -91,29 +54,24 @@ class ScheduleController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreScheduleRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'type' => 'required|in:lecture,practice,lab,seminar,exam,consultation',
-            'date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'group_id' => 'required|exists:groups,id',
-            'classroom' => 'nullable|string|max:20', 
-            'recurrence' => 'required|in:none,weekly,biweekly',
-            'milestone_id' => 'required_if:recurrence,weekly,biweekly|exists:milestones,id',
-            'description' => 'nullable|string',
-            'course_id' => 'required|exists:courses,id'
-        ]);
+        $validated = $request->validated();
 
         $validated['teacher_id'] = Auth::id();
+
+        $classroom = \App\Models\Classroom::where('number', $validated['classroom'])->first();
+        if (!$classroom) {
+            return back()->withErrors(['classroom' => 'Кабинет с таким номером не найден']);
+        }
+        $validated['classroom_id'] = $classroom->id;
+        unset($validated['classroom']);
 
         if (!$this->isTimeSlotAvailable(
             $validated['date'],
             $validated['start_time'],
             $validated['end_time'],
-            $validated['classroom']
+            $validated['classroom_id']
         )) {
             return back()->withErrors(['time' => 'Это время уже занято в выбранной аудитории']);
         }
@@ -124,8 +82,35 @@ class ScheduleController extends Controller
             Schedule::create($validated);
         }
 
+        if ($request->recurrence === 'none' && $request->has('task_id')) {
+            $validated['task_id'] = $request->task_id;
+        } else {
+            $validated['task_id'] = null;
+        }
+
         return redirect()->route('CourseSchedule', $request->course_id)
             ->with('success', 'Занятие успешно создано');
+    }
+
+    public function update(UpdateScheduleRequest $request, Course $course, Schedule $lesson)
+    {
+        $request->merge([
+            'start_time' => Carbon::parse($request->start_time)->format('H:i'),
+            'end_time' => Carbon::parse($request->end_time)->format('H:i')
+        ]);
+
+        $validated = $request->validated();
+
+        $lesson->update($validated);
+
+        return redirect()->route('CourseScheduleShowLesson', ['course' => $course->id, 'lesson' => $lesson->id])
+            ->with('success', 'Занятие успешно обновлено');
+    }
+
+    public function destroy(Course $course, Schedule $lesson) 
+    {
+        $lesson->delete();
+        return redirect()->route('CourseSchedule', ['course' => $course->id])->with('success', 'Занятие успешно удалено');
     }
 
     private function createRecurringEvents($data)
@@ -163,7 +148,6 @@ class ScheduleController extends Controller
         }
     }
 
-    
     public function getLessons(Request $request, $course)
     {
         try {
@@ -172,16 +156,15 @@ class ScheduleController extends Controller
                 'end' => 'required|date|after_or_equal:start'
             ]);
 
-            $groupIds = auth()->guard('student')->check()
-                ? Auth::user()->groups()->pluck('groups.id')
-                : [];
+            $query = Schedule::with(['group', 'classroom'])
+                ->where('course_id', $course);
 
-            $lessons = Schedule::with('group') // Добавляем загрузку группы
-                ->where('course_id', $course)
-                ->when(!empty($groupIds), function($query) use ($groupIds) {
-                    $query->whereIn('group_id', $groupIds);
-                })
-                ->where(function($query) use ($validated) {
+            if (auth()->guard('student')->check()) {
+                $groupIds = Auth::user()->groups()->pluck('groups.id')->toArray();
+                $query->whereIn('group_id', $groupIds);
+            }
+
+            $lessons = $query->where(function($query) use ($validated) {
                     $query->where(function($q) use ($validated) {
                         $q->whereNull('recurrence')
                         ->orWhere('recurrence', 'none');
@@ -213,7 +196,7 @@ class ScheduleController extends Controller
     private function isTimeSlotAvailable($date, $startTime, $endTime, $classroom, $ignoreId = null)
     {
         return !Schedule::where('date', $date)
-            ->where('classroom', $classroom)
+            ->where('classroom_id', $classroom)
             ->where(function($query) use ($startTime, $endTime) {
                 $query->whereBetween('start_time', [$startTime, $endTime])
                       ->orWhereBetween('end_time', [$startTime, $endTime])
@@ -242,4 +225,28 @@ class ScheduleController extends Controller
         return $query;
     }
 
+    public function generate(Request $request, ScheduleGeneratorService $service)
+    {
+        $request->validate([
+            'milestone' => 'required|integer|exists:milestones,id',
+        ]);
+
+        $milestone = Milestone::findOrFail($request->milestone);
+
+        $result = $service->generateForMilestone($milestone);
+
+        if ($result['errors'] > 0) {
+            return redirect()->back()->with('error', 'Ошибка при генерации расписания. Проверьте логи.');
+        }
+
+        if ($result['created'] > 0) {
+            return redirect()->back()->with('success', "Расписание успешно сгенерировано! Добавлено занятий: {$result['created']}");
+        }
+
+        if ($result['already_ready'] > 0) {
+            return redirect()->back()->with('success', 'Расписание уже было сгенерировано и заполнено полностью.');
+        }
+
+        return redirect()->back()->with('info', 'Нет данных для генерации расписания.');
+    }
 }

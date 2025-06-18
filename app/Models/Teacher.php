@@ -12,11 +12,18 @@ class Teacher extends Authenticatable
         'email', 'password', 'image',
     ];
 
-    public function courses() {
+    public function courses() 
+    {
         return $this->belongsToMany(Course::class, 'teacher_course');
     }
 
-    public function groups() {
+    public function groups() 
+    {
         return $this->belongsToMany(Group::class, 'teacher_group');
+    }
+
+    public function getType()
+    {
+        return $this instanceof Teacher ? 'teacher' : 'student';
     }
 }

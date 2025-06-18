@@ -130,14 +130,14 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="from" class="block mb-2 font-medium">Дата начала</label>
-                                <input type="date" id="from" name="from" value="{{ $task->from }}" 
-                                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="date" id="from" name="from" value="{{ $task->from ? $task->from->format('Y-m-d') : '' }}" 
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                             
                             <div>
                                 <label for="deadline" class="block mb-2 font-medium">Дедлайн</label>
-                                <input type="date" id="deadline" name="deadline" value="{{ $task->deadline }}" 
-                                       class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <input type="date" id="deadline" name="deadline" value="{{ $task->deadline ? $task->deadline->format('Y-m-d') : '' }}" 
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             </div>
                         </div>
                         
@@ -206,24 +206,36 @@
                     <div class="bg-gray-700 p-4 rounded-lg mb-6">
                         <h4 class="font-medium text-lg mb-2">Оценка</h4>
                         <div class="flex items-center space-x-3">
-                            <span class="text-2xl font-bold {{ $grade->grade >= 60 ? 'text-green-400' : 'text-yellow-400' }}">
-                                {{ $grade->grade }}/100
-                            </span>
-                            @if($grade->grade >= 90)
-                            <span class="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Отлично</span>
-                            @elseif($grade->grade >= 75)
-                            <span class="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full">Хорошо</span>
-                            @elseif($grade->grade >= 60)
-                            <span class="px-2 py-1 bg-yellow-900 text-yellow-300 text-xs rounded-full">Удовлетворительно</span>
-                            @else
-                            <span class="px-2 py-1 bg-red-900 text-red-300 text-xs rounded-full">Неудовлетворительно</span>
-                            @endif
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-4">
+                                    <span class="text-2xl font-bold {{ $grade->grade >= 60 ? 'text-green-400' : 'text-yellow-400' }}">
+                                        {{ $grade->grade }}/100
+                                    </span>
+                                    @if($grade->grade >= 90)
+                                    <span class="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Отлично</span>
+                                    @elseif($grade->grade >= 75)
+                                    <span class="px-2 py-1 bg-blue-900 text-blue-300 text-xs rounded-full">Хорошо</span>
+                                    @elseif($grade->grade >= 60)
+                                    <span class="px-2 py-1 bg-yellow-900 text-yellow-300 text-xs rounded-full">Удовлетворительно</span>
+                                    @else
+                                    <span class="px-2 py-1 bg-red-900 text-red-300 text-xs rounded-full">Неудовлетворительно</span>
+                                    @endif
+                                </div>
+                                <div>
+                                    @if(isset($grade->comment))
+                                        <span class="text-sm text-gray-400">
+                                            Комментарий: {{ $grade->comment }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
                     @endif
 
-                    <!-- Форма загрузки файлов показывается ТОЛЬКО если нет файлов И нет оценки -->
-                    @if($studentFiles->count() == 0 && !$grade)
+                    <!-- Форма загрузки файлов показывается, если нет файлов И нет комментариев -->
+                    @if($studentFiles->count() == 0 && !$grade && !$comment)
                     <form action="{{route('CourseTaskUpload', ['course' => $course->id, 'task' => $task->id])}}" method="post" enctype="multipart/form-data" class="space-y-4">
                         @csrf
                         <h3 class="text-xl font-semibold mb-2">Отправить решение</h3>
@@ -238,33 +250,52 @@
                         </div>
                         
                         <ul id="fileList" class="mt-3 space-y-2"></ul>
+
+                        <div class="mt-6">
+                            <label for="comment" class="block mb-2 font-medium">Комментарий</label>
+                            <textarea id="comment" name="comment" rows="3" 
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                    placeholder="Введите комментарий">{{old('comment')}}</textarea>
+                        </div>
                         
                         <button type="submit" class="mt-4 px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
                             <i class="fas fa-paper-plane"></i>
                             <span>Отправить решение</span>
                         </button>
                     </form>
-                    @elseif($studentFiles->count() > 0)
+                    @elseif($studentFiles->count() > 0 || $comment)
                     <div>
                         <h3 class="text-xl font-semibold mb-4">Ваше решение</h3>
-                        <div class="space-y-3 mb-6">
-                            @foreach($studentFiles as $file)
-                            <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg">
-                                <div class="flex items-center space-x-3">
-                                    <i class="far fa-file text-blue-400"></i>
-                                    <a href="{{ asset('storage/' . $file->file_path) }}" 
-                                    class="text-blue-400 hover:underline truncate max-w-xs"
-                                    download="{{ $file->original_name }}">
-                                        {{ $file->original_name }}
-                                    </a>
+                        
+                        <!-- Выводим файлы, если они есть -->
+                        @if($studentFiles->count() > 0)
+                            <div class="space-y-3 mb-6">
+                                @foreach($studentFiles as $file)
+                                <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="far fa-file text-blue-400"></i>
+                                        <a href="{{ asset('storage/' . $file->file_path) }}" 
+                                        class="text-blue-400 hover:underline truncate max-w-xs"
+                                        download="{{ $file->original_name }}">
+                                            {{ $file->original_name }}
+                                        </a>
+                                    </div>
+                                    <span class="text-xs text-gray-400">{{ round(filesize(public_path('storage/' . $file->file_path)) / 1024) }} KB</span>
                                 </div>
-                                <span class="text-xs text-gray-400">{{ round(filesize(public_path('storage/' . $file->file_path)) / 1024) }} KB</span>
+                                @endforeach
                             </div>
-                            @endforeach
-                        </div>
+                        @endif
+
+                        <!-- Если есть комментарий, выводим его -->
+                        @if($comment)
+                            <div class="mt-4">
+                                <h4 class="font-medium text-gray-400">Комментарий:</h4>
+                                <p class="text-gray-200">{{ $comment->comment }}</p>
+                            </div>
+                        @endif
                         
                         @unless($grade)
-                        <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="bg-gray-700 p-4 rounded-lg mt-4">
                             <div class="flex items-center space-x-2 text-yellow-400">
                                 <i class="fas fa-hourglass-half"></i>
                                 <span>Задание еще не оценено</span>
@@ -273,48 +304,101 @@
                         @endunless
                     </div>
                     @endif
+
                 </div>
                 @endif
                 </div>
             </div>
 
-            <!-- Правая колонка - для преподавателей -->
             @if(Auth::guard('teacher')->check() && (!isset($editing) || !$editing))
             <div class="w-full space-y-6 mt-6">
-
+                
                 <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
                     <h3 class="text-xl font-bold mb-4 flex items-center">
                         <i class="fas fa-chart-bar mr-2 text-blue-400"></i>
                         Статистика
                     </h3>
-                    
                     @php
-                        $totalStudents = $groups->sum(function($group) { return $group->students->count(); });
-                        $submittedCount = $task->studentFiles->groupBy('student_id')->count();
-                        $gradedCount = $task->grades->count();
+                        $totalStudents = $groups->flatMap(fn($group) => $group->students)->unique('id')->count();
+
+                        $submittedStudents = collect();
+
+                        if ($task->studentFiles) {
+                            $submittedStudents = $submittedStudents->merge(
+                                $task->studentFiles->pluck('student_id')
+                            );
+                        }
+                        if ($task->comments) {
+                            $commentingStudents = $task->comments
+                                ->whereNotNull('student_id')
+                                ->pluck('student_id');
+
+                            $submittedStudents = $submittedStudents->merge($commentingStudents);
+                        }
+
+                        $submittedCount = $submittedStudents->unique()->count();
+
+                        $gradedCount = $task->grades ? $task->grades->count() : 0;
+
                     @endphp
-                    
                     <div class="space-y-4">
                         <div>
-                            <div class="flex justify-between mb-1">
-                                <span class="font-medium">Сдали работу</span>
-                                <span class="font-medium">{{ $submittedCount }}/{{ $totalStudents }}</span>
-                            </div>
-                            <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $totalStudents > 0 ? ($submittedCount/$totalStudents)*100 : 0 }}%"></div>
-                            </div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-medium">Сдали работу</span>
+                            <span class="font-medium">{{ $submittedCount }}/{{ $totalStudents }}</span>
                         </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $totalStudents > 0 ? ($submittedCount / $totalStudents) * 100 : 0 }}%"></div>
+                        </div>
+                    </div>
                         
                         <div>
                             <div class="flex justify-between mb-1">
                                 <span class="font-medium">Проверено работ</span>
-                                <span class="font-medium">{{ $gradedCount }}/{{ $submittedCount }}</span>
+                                <span class="font-medium">{{ $gradedCount }}/{{ $totalStudents }}</span>
                             </div>
                             <div class="w-full bg-gray-700 rounded-full h-2.5">
-                                <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ $submittedCount > 0 ? ($gradedCount/$submittedCount)*100 : 0 }}%"></div>
+                                <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ $gradedCount > 0 ? ($gradedCount/$totalStudents)*100 : 0 }}%"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
+                <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                    <h3 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-search mr-2 text-blue-400"></i>
+                        Поиск и фильтры
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <!-- Поиск по студентам -->
+                        <div>
+                            <label for="studentSearch" class="block mb-2 text-sm font-medium">Поиск студента</label>
+                            <input type="text" id="studentSearch" placeholder="ФИО студента..." 
+                                   class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <!-- Фильтр по группе -->
+                        <div>
+                            <label for="groupFilter" class="block mb-2 text-sm font-medium">Группа</label>
+                            <select id="groupFilter" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Все группы</option>
+                                @foreach($groups->filter(fn($group) => empty($group->subgroup)) as $group)
+                                    <option value="group-{{ $group->id }}">{{ $group->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Фильтр по статусу -->
+                        <div>
+                            <label for="statusFilter" class="block mb-2 text-sm font-medium">Статус задания</label>
+                            <select id="statusFilter" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Все статусы</option>
+                                <option value="checked">Проверено</option>
+                                <option value="waiting">Ожидание проверки</option>
+                                <option value="not_submitted">Не сдано</option>
+                            </select>           
+                        </div>
                     </div>
                 </div>
 
@@ -325,53 +409,65 @@
                     </h3>
                     
                     <div class="space-y-6">
-                        @foreach($groups as $group)
-                        <div>
-                            <h4 class="font-semibold text-lg mb-3 text-yellow-400">{{ $group->name }}</h4>
-                            
-                            <div class="overflow-x-auto">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr class="bg-gray-700 text-left">
-                                            <th class="p-3">Студент</th>
-                                            <th class="p-3">Статус</th>
-                                            <th class="p-3">Оценка</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-700">
-                                        @foreach($group->students as $student)
-                                        @php
-                                            $submission = $task->studentFiles->where('student_id', $student->id)->first();
-                                            $grade = $task->grades->where('student_id', $student->id)->first();
-                                            
-                                            if ($submission) {
-                                                $status = $grade ? '✅ Проверено' : '⏳ Ожидание';
-                                                $statusColor = $grade ? 'text-green-400' : 'text-yellow-400';
-                                                $score = $grade && $grade->grade !== null ? $grade->grade . '/100' : '—';
-                                            } else {
-                                                $status = '❌ Не сдано';
-                                                $statusColor = 'text-red-400';
-                                                $score = '—';
-                                            }
-                                            
-                                            $studentUrl = route('CourseTaskShowStudent', [
-                                                'course' => $course->id,
-                                                'task' => $task->id,
-                                                'student' => $student->id
-                                            ]);
-                                        @endphp
-                                        
-                                        <tr class="hover:bg-gray-700 cursor-pointer" onclick="window.location='{{ $studentUrl }}'">
-                                            <td class="p-3">{{ $student->surname }} {{ $student->name }}</td>
-                                            <td class="p-3 font-semibold {{ $statusColor }}">{{ $status }}</td>
-                                            <td class="p-3">{{ $score }}</td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+
+                        @foreach($groups->filter(fn($group) => empty($group->subgroup)) as $group)
+                            <div data-group-container="{{ $group->id }}" class="group-container">
+                                <h4 class="font-semibold text-lg mb-3 text-yellow-400">{{ $group->name }}</h4>
+                                
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="bg-gray-700 text-left">
+                                                <th class="p-3">Студент</th>
+                                                <th class="p-3">Статус</th>
+                                                <th class="p-3">Оценка</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-700">
+                                            @foreach($group->students as $student)
+                                                @php
+                                                    $submission = $task->studentFiles?->where('student_id', $student->id)?->first();
+                                                    $commentSubmission = $task->comments?->where('student_id', $student->id)?->first(); 
+                                                    $grade = $task->grades?->where('student_id', $student->id)?->first();
+
+                                                    if ($grade) {
+                                                        $status = 'checked';
+                                                        $statusText = '✅ Проверено';
+                                                        $statusColor = 'text-green-400';
+                                                        $score = $grade->grade !== null ? $grade->grade . '/100' : '—';
+                                                    } elseif ($submission || $commentSubmission) {
+                                                        $status = 'waiting';
+                                                        $statusText = '⏳ Ожидание';
+                                                        $statusColor = 'text-yellow-400';
+                                                        $score = '—';
+                                                    } else {
+                                                        $status = 'not_submitted';
+                                                        $statusText = '❌ Не сдано';
+                                                        $statusColor = 'text-red-400';
+                                                        $score = '—';
+                                                    }
+
+                                                    $studentUrl = route('CourseTaskShowStudent', [
+                                                        'course' => $course->id,
+                                                        'task' => $task->id,
+                                                        'student' => $student->id
+                                                    ]);
+                                                @endphp
+
+                                                <tr class="hover:bg-gray-700 cursor-pointer student-row" 
+                                                    onclick="window.location='{{ $studentUrl }}'"
+                                                    data-status="{{ $status }}">
+                                                    <td class="p-3">{{ $student->surname }} {{ $student->name }}</td>
+                                                    <td class="p-3 font-semibold {{ $statusColor }}">{{ $statusText }}</td>
+                                                    <td class="p-3">{{ $score }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
                         @endforeach
+
                     </div>
                 </div>
             </div>
@@ -390,6 +486,7 @@
 <script src="{{asset('js/student-upload.js')}}"></script>
 @endif
 
+<script src="{{asset('js/search-student-tasks.js')}}"></script>
 @include('include.success-message')
 @include('include.error-message') 
 @endsection

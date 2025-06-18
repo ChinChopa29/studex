@@ -9,9 +9,13 @@ class Message extends Model
 {
     use SoftDeletes;
 
-    protected $dates = ['deleted_at'];
+    protected $dates = [
+        'deleted_at'
+    ];
 
-    protected $fillable = ['receiver_id', 'receiver_type', 'sender_id', 'sender_type', 'message', 'type', 'status', 'additional', 'deleted_by', 'deleted_by_receiver', 'deleted_by_sender'];
+    protected $fillable = [
+        'receiver_id', 'receiver_type', 'sender_id', 'sender_type', 'message', 'type', 'status', 'additional', 'deleted_by', 'deleted_by_receiver', 'deleted_by_sender'
+    ];
 
     public function receiver()
     {
@@ -22,10 +26,12 @@ class Message extends Model
     {
         return $this->morphTo();
     }
+    
     public function files()
     {
         return $this->hasMany(MessageFile::class, 'message_id', 'id');
     }
+
     public function favorites()
     {
         return $this->belongsToMany(User::class, 'favorite_messages', 'message_id', 'user_id');

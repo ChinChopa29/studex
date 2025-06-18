@@ -9,7 +9,9 @@ class Milestone extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['course_id', 'name', 'milestone_number', 'from', 'deadline'];
+    protected $fillable = [
+        'course_id', 'name', 'milestone_number', 'from', 'deadline'
+    ];
 
     public function course()
     {
@@ -20,4 +22,14 @@ class Milestone extends Model
     {
         return $this->hasMany(Task::class);
     }
+
+    public function testTasks()
+    {
+        return $this->hasMany(TestTask::class);
+    }
+
+    protected $casts = [
+        'from' => 'date',
+        'deadline' => 'date',
+    ];
 }

@@ -1,30 +1,27 @@
 @php
-   $user = Auth::guard('admin')->user() ?? Auth::guard('teacher')->user() ?? Auth::guard('student')->user();
-   $grade = $task->grades->where('student_id', $student->id)->first();
-   $studentFiles = $task->studentFiles->where('student_id', $student->id);
+    $user = Auth::guard('admin')->user() ?? Auth::guard('teacher')->user() ?? Auth::guard('student')->user();
+    $grade = $task->grades->where('student_id', $student->id)->first();
+    $studentFiles = $task->studentFiles->where('student_id', $student->id);
+    $studentComments = $task->comments->where('student_id', $student->id);
    
-   // Получаем список всех студентов курса с их статусами
-   $allStudents = collect();
-   foreach($groups as $group) {
-       foreach($group->students as $s) {
-           $submission = $task->studentFiles->where('student_id', $s->id)->first();
-           $g = $task->grades->where('student_id', $s->id)->first();
-           $status = $submission ? ($g ? 'checked' : 'submitted') : 'not_submitted';
-           $allStudents->push([
-               'id' => $s->id,
-               'name' => $s->surname.' '.$s->name,
-               'status' => $status
-           ]);
-       }
-   }
-   
-   // Находим текущую позицию и следующих студентов
-   $currentIndex = $allStudents->search(function($item) use ($student) {
-       return $item['id'] == $student->id;
-   });
-   
-   $nextUnchecked = $allStudents->slice($currentIndex + 1)->firstWhere('status', 'submitted');
-   $nextNotSubmitted = $allStudents->slice($currentIndex + 1)->firstWhere('status', 'not_submitted');
+    $allStudents = collect();
+    foreach($groups as $group) {
+        foreach($group->students as $s) {
+            $submission = $task->studentFiles->where('student_id', $s->id)->first();
+            $g = $task->grades->where('student_id', $s->id)->first();
+            $status = $submission ? ($g ? 'checked' : 'submitted') : 'not_submitted';
+            $allStudents->push([
+                'id' => $s->id,
+                'name' => $s->surname.' '.$s->name,
+                'status' => $status
+            ]);
+        }
+    }
+    $currentIndex = $allStudents->search(function($item) use ($student) {
+        return $item['id'] == $student->id;
+    });
+    $nextUnchecked = $allStudents->slice($currentIndex + 1)->firstWhere('status', 'submitted');
+    $nextNotSubmitted = $allStudents->slice($currentIndex + 1)->firstWhere('status', 'not_submitted');
 @endphp
 
 @extends('layout.layout')
@@ -120,25 +117,6 @@
                         {{ $student->surname }} {{ $student->name }} {{ $student->lastname }}
                     </h2>
                     
-                    <!-- Навигация по студентам -->
-                    <div class="flex flex-wrap gap-2">
-                        @if($nextUnchecked)
-                        <a href="{{ route('CourseTaskShowStudent', ['course' => $course->id, 'task' => $task->id, 'student' => $nextUnchecked['id']]) }}" 
-                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
-                            <i class="fas fa-fast-forward"></i>
-                            <span>След. непроверенный</span>
-                        </a>
-                        @endif
-                        
-                        @if($nextNotSubmitted)
-                            <a href="{{ route('CourseTaskShowStudent', ['course' => $course->id, 'task' => $task->id, 'student' => $nextNotSubmitted['id']]) }}" 
-                            class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
-                                <i class="fas fa-forward"></i>
-                                <span>Следующий непроверенный</span>
-                            </a>
-                        @endif
-                    </div>
-                    
                     @if($grade && $grade->grade !== null)
                     <div class="flex items-center space-x-3 bg-gray-700 px-4 py-2 rounded-lg">
                         <span class="text-lg font-bold {{ $grade->grade >= 60 ? 'text-green-400' : 'text-yellow-400' }}">
@@ -164,27 +142,34 @@
                         Прикрепленные файлы
                     </h3>
                     
-                    @if($studentFiles->isNotEmpty())
-                    <div class="space-y-2">
-                        @foreach($studentFiles as $file)
-                        <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg hover:bg-gray-600 transition-colors duration-200">
-                            <div class="flex items-center space-x-3">
-                                <i class="far fa-file text-blue-400"></i>
-                                <a href="{{ asset('storage/' . $file->file_path) }}" 
-                                   class="text-blue-400 hover:underline truncate max-w-xs"
-                                   download="{{ $file->original_name }}">
-                                    {{ $file->original_name }}
-                                </a>
-                            </div>
-                            <span class="text-xs text-gray-400">{{ round(filesize(public_path('storage/' . $file->file_path)) / 1024) }} KB</span>
+                    @if($studentFiles->isNotEmpty() || $studentComments->isNotEmpty())
+                        <div class="space-y-2">
+                            @foreach($studentFiles as $file)
+                                <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="far fa-file text-blue-400"></i>
+                                        <a href="{{ asset('storage/' . $file->file_path) }}" 
+                                        class="text-blue-400 hover:underline truncate max-w-xs"
+                                        download="{{ $file->original_name }}">
+                                            {{ $file->original_name }}
+                                        </a>
+                                    </div>
+                                    <span class="text-xs text-gray-400">{{ round(filesize(public_path('storage/' . $file->file_path)) / 1024) }} KB</span>
+                                </div>
+                            @endforeach
+
+                            @if($studentComments->isNotEmpty())
+                                <div class="mt-4 p-4 bg-gray-800 rounded-lg">
+                                    <h4 class="text-lg font-semibold text-gray-300">Комментарий студента:</h4>
+                                    <p class="text-gray-400">{{ $studentComments->last()->comment }}</p>
+                                </div>
+                            @endif
                         </div>
-                        @endforeach
-                    </div>
                     @else
-                    <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
-                        <i class="fas fa-exclamation-circle mr-2"></i>
-                        Студент еще не прикрепил решение
-                    </div>
+                        <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            Студент еще не прикрепил решение
+                        </div>
                     @endif
                 </div>
 
@@ -192,14 +177,33 @@
                 @if($grade && $grade->grade !== null)
                 <div class="bg-gray-700 p-6 rounded-lg">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium">Текущая оценка: <span class="font-bold">{{ $grade->grade }}/100</span></h3>
-                        <button 
-                            onclick="document.getElementById('regrade-form').classList.toggle('hidden')" 
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 flex items-center space-x-2"
-                        >
-                            <i class="fas fa-redo"></i>
-                            <span>Изменить оценку</span>
-                        </button>
+                        <div class="space-y-4">
+                            <!-- Блок с оценкой и кнопкой -->
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-300">
+                                        Текущая оценка: 
+                                        <span class="font-bold text-white">{{ $grade->grade }}/100</span>
+                                    </h3>
+                                </div>
+                                
+                                <button 
+                                    onclick="document.getElementById('regrade-form').classList.toggle('hidden')" 
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+                                >
+                                    <i class="fas fa-redo"></i>
+                                    <span>Изменить оценку</span>
+                                </button>
+                            </div>
+                        
+                            <!-- Блок с комментарием -->
+                            @if($grade->comment)
+                                <div class="mt-2 p-3 bg-gray-700 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-300 mb-1">Комментарий преподавателя:</p>
+                                    <p class="text-gray-400">{{ $grade->comment }}</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                     
                     <form id="regrade-form" 
@@ -219,6 +223,10 @@
                                     max="100" 
                                     value="{{ $grade->grade }}"
                                     class="w-24 px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <label for="comment" class="block mb-2 font-medium">Комментарий</label>
+                                <textarea id="comment" name="comment" rows="3" 
+                                        class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                        placeholder="Введите комментарий">{{old('comment')}}</textarea>
                                 <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
                                     <i class="fas fa-save"></i>
                                     <span>Сохранить</span>
@@ -227,6 +235,8 @@
                         </div>
                     </form>
                 </div>
+                @elseif($task->deadline && \Carbon\Carbon::parse($task->deadline)->lt(now()))
+                    <h1 class="font-bold text-xl text-center">Задание закрыто.</h1>
                 @else
                 <div class="bg-gray-700 p-6 rounded-lg">
                     <h3 class="text-lg font-medium mb-4">Оценить работу</h3>
@@ -245,6 +255,11 @@
                                     max="100" 
                                     value="0"
                                     class="w-24 px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                                <label for="comment" class="block mb-2 font-medium">Комментарий</label>
+                                <textarea id="comment" name="comment" rows="3" 
+                                        class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                        placeholder="Введите комментарий">{{old('comment')}}</textarea>
                                 <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 flex items-center space-x-2">
                                     <i class="fas fa-check"></i>
                                     <span>Подтвердить</span>
@@ -259,7 +274,6 @@
     </div>
 </div>
 @endif
-
 @include('include.success-message')
 @include('include.error-message') 
 @endsection

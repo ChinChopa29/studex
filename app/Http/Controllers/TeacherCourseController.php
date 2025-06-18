@@ -6,7 +6,6 @@ use App\Models\Course;
 use App\Models\Group;
 use App\Models\Message;
 use App\Models\Student;
-use App\Models\Task;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +14,8 @@ use Illuminate\Support\Facades\Log;
 
 class TeacherCourseController extends Controller
 {
-    public function index() {
+    public function index() 
+    {
         $admin = Auth::guard('admin')->user();
         $teacher = Auth::guard('teacher')->user();
         $student = Auth::guard('student')->user();
@@ -34,19 +34,20 @@ class TeacherCourseController extends Controller
         return redirect()->route('login')->with('error', 'Пользователь не найден.');
     }
     
-    
-
-    public function show(Course $course) {
+    public function show(Course $course) 
+    {
         $teachers = Teacher::all();
         return view('show.course', compact('course', 'teachers'));
     }
 
-    public function inviteStudentsForm(Course $course) {
+    public function inviteStudentsForm(Course $course) 
+    {
         $groups = Group::all();
         return view('add.invite-students-to-course', compact('course', 'groups'));
     }
 
-    public function inviteStudents(Request $request, Course $course) { 
+    public function inviteStudents(Request $request, Course $course) 
+    { 
         $groupId = $request->input('groupId');
         $group = Group::find($groupId); 
         $teacher = Auth::user(); 
@@ -70,14 +71,12 @@ class TeacherCourseController extends Controller
                 continue; 
             }
     
-            // Удаляем declined, если есть
             DB::table('student_course')
                 ->where('student_id', $student->id)
                 ->where('course_id', $course->id)
                 ->where('status', 'declined')
                 ->delete();
     
-            // Проверяем, есть ли еще другая (не declined) запись, чтобы не дублировать
             $alreadyInvited = DB::table('student_course')
                 ->where('student_id', $student->id)
                 ->where('course_id', $course->id)
@@ -114,8 +113,8 @@ class TeacherCourseController extends Controller
             ->with('success', "Приглашения отправлены: $invitedCount. Пропущено: $skippedCount.");
     }
     
-    
-    public function getGroupStudents(Request $request, $course, $group_id) {
+    public function getGroupStudents(Request $request, $course, $group_id) 
+    {
         try {
             $students = Student::whereHas('groups', function($query) use ($group_id) {
                     $query->where('groups.id', $group_id);
@@ -174,7 +173,8 @@ class TeacherCourseController extends Controller
         }
     }
 
-    public function studentsShow(Course $course) {
+    public function studentsShow(Course $course) 
+    {
         $groups = Group::whereHas('students', function ($query) use ($course) {
             $query->whereHas('courses', function ($q) use ($course) {
                 $q->where('course_id', $course->id);
@@ -188,8 +188,8 @@ class TeacherCourseController extends Controller
         return view('show.course-students', compact('course', 'groups'));
     }
 
-    public function gradesShow(Course $course) {
+    public function gradesShow(Course $course) 
+    {
         return view('show.course-grades', compact('course'));
     }
-    
 }

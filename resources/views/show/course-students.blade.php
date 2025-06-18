@@ -1,5 +1,6 @@
 @php
    $user = Auth::guard('admin')->user() ?? Auth::guard('teacher')->user() ?? Auth::guard('student')->user();
+   $filteredGroups = $groups->filter(fn($group) => empty($group->subgroup));
 @endphp
 
 @extends('layout.layout')
@@ -46,7 +47,7 @@
             </h2>
 
             @if(!Auth::guard('student')->check())
-                @forelse ($groups as $group)
+                @forelse($filteredGroups as $group)
                 <div class="mb-8">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-semibold">{{ $group->name }}</h3>
@@ -81,7 +82,7 @@
                             @forelse ($acceptedStudents as $student)
                             <div class="flex items-center justify-between py-2 border-b border-gray-600 last:border-0">
                                 <span>{{ $student->surname }} {{ $student->name }} {{ $student->lastname }}</span>
-                                <a href="#" class="text-blue-400 hover:text-blue-300 text-sm">
+                                <a href="{{route('UserProfile', ['type' => 'student', 'id' => $student->id])}}" class="text-blue-400 hover:text-blue-300 text-sm">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </div>
@@ -103,14 +104,6 @@
                             @forelse ($pendingStudents as $student)
                             <div class="flex items-center justify-between py-2 border-b border-gray-600 last:border-0">
                                 <span>{{ $student->surname }} {{ $student->name }} {{ $student->lastname }}</span>
-                                <div class="flex space-x-2">
-                                    <button class="text-green-400 hover:text-green-300 text-sm">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button class="text-red-400 hover:text-red-300 text-sm">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
                             </div>
                             @empty
                             <p class="text-gray-400 text-sm">Нет студентов</p>
@@ -130,9 +123,6 @@
                             @forelse ($declinedStudents as $student)
                             <div class="flex items-center justify-between py-2 border-b border-gray-600 last:border-0">
                                 <span>{{ $student->surname }} {{ $student->name }} {{ $student->lastname }}</span>
-                                <button class="text-blue-400 hover:text-blue-300 text-sm">
-                                    <i class="fas fa-redo"></i>
-                                </button>
                             </div>
                             @empty
                             <p class="text-gray-400 text-sm">Нет студентов</p>
@@ -171,7 +161,7 @@
                 @endforelse
 
             @elseif(Auth::guard('student')->check())
-                @forelse ($groups as $group)
+                @forelse($filteredGroups as $group)
                 <div class="mb-6 bg-gray-700 p-5 rounded-lg">
                     <h3 class="text-lg font-semibold mb-4">{{ $group->name }}</h3>
                     
@@ -193,8 +183,8 @@
                                 </div>
                             </div>
                             <div>
-                                <p class="font-medium">{{ $student->surname }} {{ $student->name }}</p>
-                                <p class="text-sm text-gray-400">{{ $student->lastname }}</p>
+                                <p class="font-medium">{{ $student->surname }} {{ $student->name }} {{ $student->lastname }}</p>
+                                <p class="text-sm text-gray-400">{{$student->email}}</p>
                             </div>
                         </div>
                         @empty

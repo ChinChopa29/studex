@@ -24,9 +24,6 @@
                 <span class="text-gray-400">{{ $lesson->title }}</span>
             </div>
         </div>
-
-        
-
         <!-- Основная информация о занятии -->
         <div class="bg-gray-800 rounded-xl p-6 shadow-lg mb-6">
             <div class="flex justify-between items-start mb-6">
@@ -34,28 +31,152 @@
                     <a href="{{ route('CourseSchedule', ['course' => $course->id])}}" class="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200">
                         <i class="fas fa-arrow-left text-lg"></i>
                     </a>
-                    <h1 class="text-3xl font-bold">Занятие: {{$lesson->title}} <span class="text-gray-400"></span></h1>
+                    @if($editing ?? false)
+                        <h1 class="text-3xl font-bold">Редактирование занятия</h1>
+                    @else
+                        <h1 class="text-3xl font-bold">Занятие: {{$lesson->title}} <span class="text-gray-400"></span></h1>
+                    @endif
                 </div>
                 @if(auth()->guard('admin')->check() || auth()->guard('teacher')->check())
                 <div class="flex space-x-3">
-                    <a href="{{ route('CourseScheduleEditLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" 
-                       class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-md text-sm">
-                        <i class="fas fa-edit mr-2"></i>Редактировать
-                    </a>
-                    <form action="{{ route('CourseScheduleDeleteLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" 
-                                class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-md text-sm"
-                                onclick="return confirm('Вы уверены, что хотите удалить это занятие?')">
-                            <i class="fas fa-trash mr-2"></i>Удалить
-                        </button>
-                    </form>
+                    @if($editing ?? false)
+                        <form action="{{ route('CourseScheduleUpdateLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-md text-sm">
+                                <i class="fas fa-save mr-2"></i>Сохранить
+                            </button>
+                        </form>
+                        <a href="{{ route('CourseScheduleShowLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" 
+                        class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-md text-sm">
+                            <i class="fas fa-times mr-2"></i>Отмена
+                        </a>
+                    @else
+                        <form action="{{ route('CourseScheduleEditLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="get">
+                            @csrf
+                            <button class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 rounded-md text-sm">
+                                <i class="fas fa-edit mr-2"></i>Редактировать</button>
+                        </form> 
+                        <form action="{{ route('CourseScheduleDeleteLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-md text-sm"
+                                    onclick="return confirm('Вы уверены, что хотите удалить это занятие?')">
+                                <i class="fas fa-trash mr-2"></i>Удалить
+                            </button>
+                        </form>
+                    @endif
                 </div>
                 @endif
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            @if($editing ?? false)
+                <!-- Форма редактирования -->
+                <form action="{{ route('CourseScheduleUpdateLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Левая колонка -->
+                        <div class="space-y-6">
+                            <!-- Название -->
+                            <div>
+                                <label for="title" class="block mb-2 font-medium">Название занятия</label>
+                                <input type="text" id="title" name="title" required
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    value="{{ $lesson->title }}">
+                            </div>
+                            
+                            <!-- Тип занятия -->
+                            <div>
+                                <label for="type" class="block mb-2 font-medium">Тип занятия</label>
+                                <select id="type" name="type" required
+                                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="lecture" @if($lesson->type == 'lecture') selected @endif>Лекция</option>
+                                    <option value="practice" @if($lesson->type == 'practice') selected @endif>Практика</option>
+                                    <option value="lab" @if($lesson->type == 'lab') selected @endif>Лабораторная</option>
+                                    <option value="seminar" @if($lesson->type == 'seminar') selected @endif>Семинар</option>
+                                    <option value="exam" @if($lesson->type == 'exam') selected @endif>Экзамен</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Дата и время -->
+                            <div>
+                                <label class="block mb-2 font-medium">Дата и время</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="date" name="date" required 
+                                        class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                        value="{{ \Carbon\Carbon::parse($lesson->date)->format('Y-m-d') }}">
+                                    <input type="time" name="start_time" required
+                                        class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                        value="{{ $lesson->start_time }}">
+                                    <input type="time" name="end_time" required
+                                        class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                        value="{{ $lesson->end_time }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Правая колонка -->
+                        <div class="space-y-6">
+                            <!-- Группа -->
+                            <div>
+                            <label for="group_id" class="block mb-2 font-medium">Группа</label>
+                            <select id="group_id" name="group_id" required
+                                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @foreach($groups as $group)
+                                    <option value="{{ $group->id }}" @if($group->id == $lesson->group_id) selected @endif>
+                                        {{ $group->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            </div>
+                            
+                            <!-- Аудитория -->
+                            <div>
+                            <label for="classroom" class="block mb-2 font-medium">Аудитория</label>
+                            <input type="text" id="classroom" name="classroom"
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            value="">
+                            </div>
+                            
+                            <!-- Прикрепленное задание -->
+                            <div>
+                                <label for="task_id" class="block mb-2 font-medium">Прикрепить задание</label>
+                                <select id="task_id" name="task_id"
+                                        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Не прикреплять задание</option>
+                                    @foreach($tasks as $task)
+                                        <option value="{{ $task->id }}" @if($task->id == $lesson->task_id) selected @endif>
+                                            {{ $task->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Описание -->
+                    <div class="mt-6">
+                        <label for="description" class="block mb-2 font-medium">Описание</label>
+                        <textarea id="description" name="description" rows="3"
+                                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ $lesson->description }}</textarea>
+                    </div>
+                    
+                    <!-- Кнопки -->
+                    <div class="flex justify-end space-x-4 mt-8">
+                        <a href="{{ route('CourseScheduleShowLesson', ['course' => $course->id, 'lesson' => $lesson->id]) }}" 
+                        class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors duration-200">
+                            Отмена
+                        </a>
+                        <button type="submit" 
+                                class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200">
+                            Сохранить изменения
+                        </button>
+                    </div>
+                </form>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Левая колонка - основная информация -->
                 <div>
                     <div class="mb-4">
@@ -75,7 +196,7 @@
                             </div>
                             <div class="flex">
                                 <span class="text-gray-400 w-32">Аудитория:</span>
-                                <span>{{ $lesson->classroom }}</span>
+                                <span>{{ $lesson->classroom->number }}</span>
                             </div>
                             @if($lesson->group)
                             <div class="flex">
@@ -86,12 +207,25 @@
                         </div>
                     </div>
                     
-
                     <!-- Описание занятия -->
                     <div class="mb-4">
                         <h3 class="text-lg font-semibold text-blue-400 mb-2">Описание</h3>
                         <div class="bg-gray-700 p-4 rounded-lg">
                             {!! $lesson->description ?? '<span class="text-gray-500">Описание отсутствует</span>' !!}
+                        </div>
+                    </div>
+
+                    <!-- Прикрепленное задание -->
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-blue-400 mb-2">Задание: </h3>
+                        <div class="py-4">
+                            @if($lesson->task_id)
+                                <a href="{{route('CourseTask', ['course' => $course->id, 'task' => $lesson->task_id])}}" class="bg-gray-700 p-4 rounded-lg hover:bg-gray-600 transition-all duration-200">Перейти к заданию</a>
+                            @else
+                                <span class="bg-gray-700 p-4 rounded-lg hover:bg-gray-600 transition-all duration-200">
+                                    Задание не прикреплено
+                                </span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -185,18 +319,24 @@
                         </div>
                         @endif
                     </div>
-                
+                @endif
             </div>
+
+            @php
+                $editing = $editing ?? false; 
+            @endphp
+
             @if(auth()->guard('admin')->check() || auth()->guard('teacher')->check())
-                <div class="w-full">
-                    <div class="flex justify-between items-center mb-2 mt-4">
-                        <h3 class="text-lg font-semibold text-blue-400">Посещаемость</h3>
-                        <a href="{{ route('CourseScheduleAttendance', ['course' => $course->id, 'lesson' => $lesson->id]) }}" 
-                            class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded-md text-sm">
-                            <i class="fas fa-user-check mr-1"></i>Отметить
-                        </a>
-                    </div>
-                    
+                @if($editing == false)
+                    <div class="w-full">
+                        <div class="flex justify-between items-center mb-2 mt-4">
+                            <h3 class="text-lg font-semibold text-blue-400">Посещаемость</h3>
+                            <a href="{{ route('CourseScheduleAttendance', ['course' => $course->id, 'lesson' => $lesson->id]) }}" 
+                                class="px-3 py-1 bg-green-600 hover:bg-green-500 rounded-md text-sm">
+                                <i class="fas fa-user-check mr-1"></i>Отметить
+                            </a>
+                        </div>
+                        
                     @if($lesson->attendances()->exists())
                         <div class="bg-gray-700 p-4 rounded-lg">
                             <div class="grid grid-cols-4 gap-2 mb-2 font-medium">
@@ -221,11 +361,12 @@
                             @endforeach
                         </div>
                         @else
-                        <div class="text-gray-500 bg-gray-700 p-4 rounded-lg">
-                            Посещаемость не отмечена
-                        </div>
+                            <div class="text-gray-500 bg-gray-700 p-4 rounded-lg">
+                                Посещаемость не отмечена
+                            </div>
                         @endif
                     </div>
+                @endif
             @endif
         </div>
     </div>

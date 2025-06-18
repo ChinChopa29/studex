@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EducationProgramController;
 use App\Http\Controllers\GroupController;
@@ -159,5 +160,4 @@ Route::middleware(['is_admin'])->prefix('admin')->group(function () {
       Route::delete('/{teacher}/delete', [TeacherController::class, 'destroy'])->name('admin.destroyTeacher');
 
    });
-
 });

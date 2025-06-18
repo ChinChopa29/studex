@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\MessageBulkActionService;
 
-
 class MailController extends Controller
 {
     protected $messageService;
@@ -86,8 +85,6 @@ class MailController extends Controller
         $message = $this->messageService->showDeletedMessage($message);
         return view('show.deleted-mail', compact('message'));
     }
-
-    
 
     public function favorite() 
     {

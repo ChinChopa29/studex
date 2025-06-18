@@ -5,7 +5,6 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use App\Models\Message;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Carbon;
 
 class MessageBulkActionService
 {
@@ -70,15 +69,14 @@ class MessageBulkActionService
     }
 
     public function handle(string $action, array $messageIds, $user)
-   {
-      match ($action) {
-         'read' => $this->markAsRead($messageIds, $user),
-         'delete' => $this->softDelete($messageIds, $user),
-         'forceDelete' => $this->forceDelete($messageIds, $user),
-         'favorite' => $this->favorite($messageIds, $user),
-         'unfavorite' => $this->unfavorite($messageIds, $user),
-         default => throw new \InvalidArgumentException("Неизвестное действие: $action"),
-      };
-   }
-
+    {
+        match ($action) {
+            'read' => $this->markAsRead($messageIds, $user),
+            'delete' => $this->softDelete($messageIds, $user),
+            'forceDelete' => $this->forceDelete($messageIds, $user),
+            'favorite' => $this->favorite($messageIds, $user),
+            'unfavorite' => $this->unfavorite($messageIds, $user),
+            default => throw new \InvalidArgumentException("Неизвестное действие: $action"),
+        };
+    }
 }

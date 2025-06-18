@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Storage;
 
 class TeacherController extends Controller
 {
-    public function create() {
+    public function create() 
+    {
         return view('admin.add.add-teacher');
     }
 
-    public function store(Request $request) {
+    public function store(Request $request) 
+    {
         $validated = $request->validate([
             'name' => 'required',
             'surname' => 'required',
@@ -57,22 +59,26 @@ class TeacherController extends Controller
         return redirect()->route('admin.createTeacher')->with('success', 'Преподаватель успешно добавлен!');
     }
 
-    public function index() {
+    public function index() 
+    {
         $teachers = Teacher::paginate(10);
         return view('admin.teachers', compact('teachers'));
     }
 
-    public function show(Teacher $teacher) {
+    public function show(Teacher $teacher) 
+    {
         $editing = false;
         return view('admin.show.teacher', compact('teacher', 'editing'));
     }
 
-    public function edit(Teacher $teacher) {
+    public function edit(Teacher $teacher) 
+    {
         $editing = true;
         return view('admin.show.teacher', compact('teacher', 'editing'));
     }
 
-    public function update(Teacher $teacher, Request $request) {
+    public function update(Teacher $teacher, Request $request) 
+    {
         $validated = $request->validate([
             'name' => 'required',
             'surname' => 'required',
@@ -126,12 +132,14 @@ class TeacherController extends Controller
         return redirect()->back()->with('success', 'Преподаватель успешно обновлен!');
     }
     
-    public function destroy(Teacher $teacher) {
+    public function destroy(Teacher $teacher) 
+    {
         $teacher->delete();
         return redirect()->route('admin.showTeachers')->with('success', 'Преподаватель успешно удален');
     }
 
-    public function search(Request $request) {
+    public function search(Request $request) 
+    {
         $query = $request->get('search');
         $teachers = Teacher::query();
     

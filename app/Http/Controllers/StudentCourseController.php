@@ -3,39 +3,54 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\CourseStyle;
 use App\Models\Group;
+use App\Services\StudentCourseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class StudentCourseController extends Controller
 {
-   public function index() {
-      $student = Auth::user(); 
-  
-      $courses = Course::whereHas('students', function ($query) use ($student) {
-          $query->where('students.id', $student->id)
-                ->where('student_course.status', 'accepted'); 
-      })->get();
-  
-      return view('courses', compact('courses'));
-  }
-  
-   public function show(Course $course) {
-      return view('show.course', compact('course'));
-   }
+    protected $studentCourseService;
 
-   public function studentsShow(Course $course) {
-      $groups = Group::whereHas('students', function ($query) use ($course) {
-          $query->whereHas('courses', function ($q) use ($course) {
-              $q->where('course_id', $course->id);
-          });
-      })->with(['students' => function ($query) use ($course) {
-          $query->with(['courses' => function ($q) use ($course) {
-              $q->where('course_id', $course->id)->select('student_id', 'status');
-          }]);
-      }])->get();
-  
-      return view('show.course-students', compact('course', 'groups'));
-  }
-  
+    public function __construct(StudentCourseService $studentCourseService)
+    {
+        $this->studentCourseService = $studentCourseService;
+    }
+
+    public function index() 
+    {
+        $student = Auth::user(); 
+        $courses = $this->studentCourseService->getCourses($student);
+        return view('courses', compact('courses'));
+    }
+
+    public function show(Course $course) 
+    {
+        return view('show.course', compact('course'));
+    }
+
+    public function studentsShow(Course $course) 
+    {
+        $groups = $this->studentCourseService->getGroups($course);
+        return view('show.course-students', compact('course', 'groups'));
+    }
+
+    public function storeColor(Request $request)
+    {
+        $data = $request->validate([
+            'color' => ['required', 'regex:/^#([A-Fa-f0-9]{6})$/'],
+            'course_id' => ['required', 'exists:courses,id'],
+        ]);
+
+        CourseStyle::updateOrCreate(
+            ['course_id' => $data['course_id']],
+            [
+                'color' => $data['color'],
+                'student_id' => Auth::id()
+            ]
+        );
+
+        return back()->with('success', 'Цвет обновлён!');
+    }
 }

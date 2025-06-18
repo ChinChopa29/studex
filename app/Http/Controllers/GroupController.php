@@ -156,4 +156,10 @@ class GroupController extends Controller
             return response()->json(['exists' => false]);
         }
     }
+
+    public function showGroups()
+    {
+        $groups = Group::all();
+        return view('groups', compact('groups'));
+    }
 }

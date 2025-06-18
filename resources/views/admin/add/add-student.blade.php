@@ -129,5 +129,4 @@
 <script src="{{ asset('js/alert-pop-up.js') }}"></script>
 @include('include.success-message')
 @include('include.error-message')
-
 @endsection

@@ -66,7 +66,8 @@ class CourseService
       $course->delete();
    }
 
-   public function searchCourses($query, $degree, $semester) {
+   public function searchCourses($query, $degree, $semester) 
+   {
       $courses = Course::query();
 
       if ($query) {
@@ -96,5 +97,4 @@ class CourseService
 
       return $courses->paginate(10)->appends(request()->query());
    }
-
 }

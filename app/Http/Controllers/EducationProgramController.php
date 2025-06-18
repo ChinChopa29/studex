@@ -70,5 +70,4 @@ class EducationProgramController extends Controller
         $educationPrograms = $this->educationProgramService->searchEducationProgram($filters);
         return view('admin.education-programs', compact('educationPrograms'));
     }
-
 }

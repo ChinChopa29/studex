@@ -27,22 +27,22 @@ class AuthService
       return null;  
    }
 
-    public function userAuthenticate($email, $password)
-    {
-      if ($admin = User::where('email', $email)->first()) {
-         return $this->checkPasswordAndLogin($admin, $password, 'admin');
-      }
+   public function userAuthenticate($email, $password)
+   {
+   if ($admin = User::where('email', $email)->first()) {
+      return $this->checkPasswordAndLogin($admin, $password, 'admin');
+   }
 
-      if ($teacher = Teacher::where('email', $email)->first()) {
-         return $this->checkPasswordAndLogin($teacher, $password, 'teacher');
-      }
+   if ($teacher = Teacher::where('email', $email)->first()) {
+      return $this->checkPasswordAndLogin($teacher, $password, 'teacher');
+   }
 
-      if ($student = Student::where('email', $email)->first()) {
-         return $this->checkPasswordAndLogin($student, $password, 'student');
-      }
+   if ($student = Student::where('email', $email)->first()) {
+      return $this->checkPasswordAndLogin($student, $password, 'student');
+   }
 
-      return false;
-    }
+   return false;
+   }
 
    public function authenticateAndGetRedirect($email, $password)
    {
